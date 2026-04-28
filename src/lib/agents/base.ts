@@ -30,9 +30,10 @@ export async function runAgent(opts: {
     messages: [{ role: "user", content: opts.userMessage }],
   });
 
+  // TS narrow via discriminated union (evita criar type predicate que precisaria
+  // replicar o shape exato de TextBlock do SDK, que muda entre versoes).
   const text = res.content
-    .filter((b): b is { type: "text"; text: string } => b.type === "text")
-    .map((b) => b.text)
+    .flatMap((b) => (b.type === "text" ? [b.text] : []))
     .join("\n");
 
   return {
