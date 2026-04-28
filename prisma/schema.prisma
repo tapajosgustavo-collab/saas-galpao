@@ -1,0 +1,265 @@
+// SaaS Galpao — Prisma Schema
+// Multi-tenant: cada empresa (Tenant) tem seus dados isolados via tenantId.
+// Toda query do app DEVE incluir tenantId — isso é garantido pelo helper em src/lib/tenant.ts.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// =========================================================
+// AUTH & TENANCY
+// =========================================================
+
+enum Role {
+  ADMIN
+  GESTOR
+  FINANCEIRO
+}
+
+model Tenant {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  users        User[]
+  galpoes      Galpao[]
+  contratos    Contrato[]
+  receitas     Receita[]
+  despesas     Despesa[]
+  alertas      Alerta[]
+  auditLogs    AuditLog[]
+
+  @@index([slug])
+}
+
+model User {
+  id           String   @id @default(cuid())
+  tenantId     String
+  email        String   @unique
+  name         String
+  passwordHash String
+  role         Role     @default(GESTOR)
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([email])
+}
+
+// Auth.js sessions (caso use JWT puro, podemos remover; mantido p/ flexibilidade)
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  @@index([userId])
+}
+
+// =========================================================
+// CORE DOMAIN
+// =========================================================
+
+enum TipoGalpao {
+  LOGISTICO
+  INDUSTRIAL
+  ARMAZENAMENTO
+}
+
+enum StatusGalpao {
+  DISPONIVEL
+  OCUPADO
+  EM_NEGOCIACAO
+  MANUTENCAO
+}
+
+model Galpao {
+  id               String       @id @default(cuid())
+  tenantId         String
+  nome             String
+  endereco         String
+  cidade           String
+  estado           String       @db.Char(2)
+  cep              String
+  metragemTotal    Decimal      @db.Decimal(12, 2)
+  metragemDisponivel Decimal    @db.Decimal(12, 2)
+  tipo             TipoGalpao
+  valorPorM2       Decimal      @db.Decimal(12, 2)
+  status           StatusGalpao @default(DISPONIVEL)
+  observacoes      String?
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+
+  tenant    Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  contratos Contrato[]
+
+  @@index([tenantId, status])
+  @@index([tenantId, tipo])
+}
+
+enum StatusContrato {
+  ATIVO
+  ENCERRADO
+  CANCELADO
+  PENDENTE
+}
+
+model Contrato {
+  id                 String         @id @default(cuid())
+  tenantId           String
+  galpaoId           String
+  numero             String
+  empresaLocataria   String
+  cnpjLocataria      String
+  emailLocataria     String?
+  telefoneLocataria  String?
+  dataInicio         DateTime
+  dataFim            DateTime
+  valorMensal        Decimal        @db.Decimal(12, 2)
+  diaVencimento      Int            @default(5)
+  reajusteAnual      Decimal?       @db.Decimal(5, 2) // % de reajuste
+  indiceReajuste     String?        // IGPM, IPCA, etc
+  status             StatusContrato @default(ATIVO)
+  documentoUrl       String?        // URL no Supabase Storage
+  observacoes        String?
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
+
+  tenant   Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  galpao   Galpao    @relation(fields: [galpaoId], references: [id], onDelete: Restrict)
+  receitas Receita[]
+
+  @@unique([tenantId, numero])
+  @@index([tenantId, status])
+  @@index([tenantId, galpaoId])
+  @@index([tenantId, dataFim])
+}
+
+// =========================================================
+// FINANCEIRO
+// =========================================================
+
+enum StatusPagamento {
+  PENDENTE
+  PAGO
+  ATRASADO
+  CANCELADO
+}
+
+enum CategoriaDespesa {
+  MANUTENCAO
+  IMPOSTOS
+  SEGURO
+  ENERGIA
+  AGUA
+  PESSOAL
+  OUTROS
+}
+
+model Receita {
+  id           String          @id @default(cuid())
+  tenantId     String
+  contratoId   String
+  competencia  DateTime        // mês/ano de referência (dia 1)
+  vencimento   DateTime
+  valor        Decimal         @db.Decimal(12, 2)
+  valorPago    Decimal?        @db.Decimal(12, 2)
+  dataPagamento DateTime?
+  status       StatusPagamento @default(PENDENTE)
+  observacoes  String?
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+
+  tenant   Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  contrato Contrato @relation(fields: [contratoId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, status])
+  @@index([tenantId, vencimento])
+  @@index([tenantId, competencia])
+}
+
+model Despesa {
+  id          String           @id @default(cuid())
+  tenantId    String
+  galpaoId    String?
+  descricao   String
+  categoria   CategoriaDespesa
+  competencia DateTime
+  vencimento  DateTime
+  valor       Decimal          @db.Decimal(12, 2)
+  pago        Boolean          @default(false)
+  dataPagamento DateTime?
+  observacoes String?
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, categoria])
+  @@index([tenantId, vencimento])
+}
+
+// =========================================================
+// AUTOMAÇÃO & AUDITORIA
+// =========================================================
+
+enum TipoAlerta {
+  CONTRATO_VENCENDO
+  PAGAMENTO_ATRASADO
+  GALPAO_OCIOSO
+  REAJUSTE_PENDENTE
+  INSIGHT_AI
+}
+
+enum SeveridadeAlerta {
+  INFO
+  WARNING
+  CRITICAL
+}
+
+model Alerta {
+  id         String           @id @default(cuid())
+  tenantId   String
+  tipo       TipoAlerta
+  severidade SeveridadeAlerta @default(INFO)
+  titulo     String
+  mensagem   String
+  refType    String? // "contrato", "galpao", "receita"
+  refId      String?
+  lido       Boolean          @default(false)
+  createdAt  DateTime         @default(now())
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, lido])
+  @@index([tenantId, tipo])
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  tenantId  String
+  userId    String?
+  action    String
+  entity    String
+  entityId  String?
+  metadata  Json?
+  ip        String?
+  userAgent String?
+  createdAt DateTime @default(now())
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, createdAt])
+  @@index([tenantId, entity])
+}
