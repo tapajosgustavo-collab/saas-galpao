@@ -21,13 +21,15 @@ declare module "next-auth" {
   }
 }
 
-declare module "next-auth/jwt" {
-  interface JWT {
-    id: string;
-    tenantId: string;
-    role: Role;
-  }
-}
+// Shape do JWT que carregamos. Nao usamos `declare module "next-auth/jwt"`
+// porque a resolucao do submodule e fragil em algumas combinacoes de tsconfig
+// (passa em dev, falha no `next build`).
+type AppJWT = {
+  id: string;
+  tenantId: string;
+  role: Role;
+  [key: string]: unknown;
+};
 
 /**
  * Config Edge-safe do Auth.js. Sem providers, sem Prisma, sem bcrypt.
@@ -41,18 +43,20 @@ export const authConfig = {
   providers: [],
   callbacks: {
     async jwt({ token, user }) {
+      const t = token as AppJWT;
       if (user) {
-        token.id = user.id!;
-        token.tenantId = user.tenantId;
-        token.role = user.role;
+        t.id = user.id!;
+        t.tenantId = user.tenantId;
+        t.role = user.role;
       }
-      return token;
+      return t;
     },
     async session({ session, token }) {
-      if (token && session.user) {
-        session.user.id = token.id;
-        session.user.tenantId = token.tenantId;
-        session.user.role = token.role;
+      const t = token as AppJWT;
+      if (session.user) {
+        session.user.id = t.id;
+        session.user.tenantId = t.tenantId;
+        session.user.role = t.role;
       }
       return session;
     },
