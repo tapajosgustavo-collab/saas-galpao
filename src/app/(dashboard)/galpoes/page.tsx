@@ -51,38 +51,48 @@ export default async function GalpoesPage() {
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {galpoes.map((g) => (
-            <Card key={g.id} className="transition-shadow hover:shadow-md">
-              <CardHeader>
-                <div className="flex items-start justify-between">
-                  <CardTitle className="text-base">{g.nome}</CardTitle>
-                  <Badge variant={statusColor[g.status] ?? "secondary"}>
-                    {g.status.replace("_", " ")}
-                  </Badge>
-                </div>
-                <p className="flex items-center gap-1 text-xs text-slate-500">
-                  <MapPin className="h-3 w-3" />
-                  {g.cidade}/{g.estado}
-                </p>
-              </CardHeader>
-              <CardContent className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-slate-500">Tipo</span>
-                  <span className="font-medium">{g.tipo}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-500">Total</span>
-                  <span className="font-medium">{Number(g.metragemTotal).toLocaleString("pt-BR")} m²</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-500">Disponível</span>
-                  <span className="font-medium">{Number(g.metragemDisponivel).toLocaleString("pt-BR")} m²</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-500">Valor/m²</span>
-                  <span className="font-medium">{formatBRL(Number(g.valorPorM2))}</span>
-                </div>
-              </CardContent>
-            </Card>
+            <Link
+              key={g.id}
+              href={`/galpoes/${g.id}`}
+              className="block focus:outline-none focus:ring-2 focus:ring-ring rounded-lg"
+            >
+              <Card className="h-full cursor-pointer transition-shadow hover:shadow-md">
+                <CardHeader>
+                  <div className="flex items-start justify-between">
+                    <CardTitle className="text-base">{g.nome}</CardTitle>
+                    <Badge variant={statusColor[g.status] ?? "secondary"}>
+                      {g.status.replace("_", " ")}
+                    </Badge>
+                  </div>
+                  <p className="flex items-center gap-1 text-xs text-slate-500">
+                    <MapPin className="h-3 w-3" />
+                    {g.cidade}/{g.estado}
+                  </p>
+                </CardHeader>
+                <CardContent className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-slate-500">Tipo</span>
+                    <span className="font-medium">{g.tipo}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-500">Total</span>
+                    <span className="font-medium">
+                      {Number(g.metragemTotal).toLocaleString("pt-BR")} m²
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-500">Disponível</span>
+                    <span className="font-medium">
+                      {Number(g.metragemDisponivel).toLocaleString("pt-BR")} m²
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-500">Valor/m²</span>
+                    <span className="font-medium">{formatBRL(Number(g.valorPorM2))}</span>
+                  </div>
+                </CardContent>
+              </Card>
+            </Link>
           ))}
         </div>
       )}

@@ -76,24 +76,54 @@ export default async function ContratosPage() {
                       c.dataFim <= em60dias &&
                       c.dataFim >= hoje;
                     return (
-                      <tr key={c.id} className="border-b last:border-0">
-                        <td className="py-3 font-mono text-xs">{c.numero}</td>
-                        <td className="py-3">{c.empresaLocataria}</td>
-                        <td className="py-3 text-slate-600">{c.galpao.nome}</td>
-                        <td className="py-3">{formatDate(c.dataInicio)}</td>
-                        <td className="py-3">
-                          <span className="flex items-center gap-1">
-                            {formatDate(c.dataFim)}
-                            {vencendo && (
-                              <AlertTriangle className="h-3 w-3 text-amber-500" />
-                            )}
-                          </span>
+                      <tr
+                        key={c.id}
+                        className="cursor-pointer border-b transition-colors last:border-0 hover:bg-slate-50"
+                      >
+                        <td className="py-3 font-mono text-xs">
+                          <Link
+                            href={`/contratos/${c.id}`}
+                            className="block w-full text-primary hover:underline"
+                          >
+                            {c.numero}
+                          </Link>
                         </td>
-                        <td className="py-3">{formatBRL(Number(c.valorMensal))}</td>
                         <td className="py-3">
-                          <Badge variant={statusColor[c.status] ?? "secondary"}>
-                            {c.status}
-                          </Badge>
+                          <Link href={`/contratos/${c.id}`} className="block w-full">
+                            {c.empresaLocataria}
+                          </Link>
+                        </td>
+                        <td className="py-3 text-slate-600">
+                          <Link href={`/contratos/${c.id}`} className="block w-full">
+                            {c.galpao.nome}
+                          </Link>
+                        </td>
+                        <td className="py-3">
+                          <Link href={`/contratos/${c.id}`} className="block w-full">
+                            {formatDate(c.dataInicio)}
+                          </Link>
+                        </td>
+                        <td className="py-3">
+                          <Link href={`/contratos/${c.id}`} className="block w-full">
+                            <span className="flex items-center gap-1">
+                              {formatDate(c.dataFim)}
+                              {vencendo && (
+                                <AlertTriangle className="h-3 w-3 text-amber-500" />
+                              )}
+                            </span>
+                          </Link>
+                        </td>
+                        <td className="py-3">
+                          <Link href={`/contratos/${c.id}`} className="block w-full">
+                            {formatBRL(Number(c.valorMensal))}
+                          </Link>
+                        </td>
+                        <td className="py-3">
+                          <Link href={`/contratos/${c.id}`} className="block w-full">
+                            <Badge variant={statusColor[c.status] ?? "secondary"}>
+                              {c.status}
+                            </Badge>
+                          </Link>
                         </td>
                       </tr>
                     );
