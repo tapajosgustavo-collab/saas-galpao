@@ -15,6 +15,17 @@ export const receitaPagarSchema = z.object({
   dataPagamento: z.coerce.date(),
 });
 
+export const receitaUpdateSchema = z.object({
+  contratoId: z.string().cuid().optional(),
+  competencia: z.coerce.date().optional(),
+  vencimento: z.coerce.date().optional(),
+  valor: z.coerce.number().positive().optional(),
+  valorPago: z.coerce.number().positive().nullable().optional(),
+  dataPagamento: z.coerce.date().nullable().optional(),
+  status: z.nativeEnum(StatusPagamento).optional(),
+  observacoes: z.string().max(1000).nullable().optional(),
+});
+
 export const despesaCreateSchema = z.object({
   galpaoId: z.string().cuid().optional().nullable(),
   descricao: z.string().min(2).max(200),
@@ -22,8 +33,20 @@ export const despesaCreateSchema = z.object({
   competencia: z.coerce.date(),
   vencimento: z.coerce.date(),
   valor: z.coerce.number().positive(),
-  pago: z.boolean().default(false),
+  pago: z.coerce.boolean().default(false),
   observacoes: z.string().max(1000).optional().nullable(),
+});
+
+export const despesaUpdateSchema = z.object({
+  galpaoId: z.string().cuid().nullable().optional(),
+  descricao: z.string().min(2).max(200).optional(),
+  categoria: z.nativeEnum(CategoriaDespesa).optional(),
+  competencia: z.coerce.date().optional(),
+  vencimento: z.coerce.date().optional(),
+  valor: z.coerce.number().positive().optional(),
+  pago: z.coerce.boolean().optional(),
+  dataPagamento: z.coerce.date().nullable().optional(),
+  observacoes: z.string().max(1000).nullable().optional(),
 });
 
 export const registroSchema = z.object({

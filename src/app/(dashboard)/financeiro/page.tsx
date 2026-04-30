@@ -1,9 +1,11 @@
+import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/tenant";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { formatBRL, formatDate } from "@/lib/utils";
-import { TrendingUp, TrendingDown, AlertCircle } from "lucide-react";
+import { TrendingUp, TrendingDown, AlertCircle, Plus } from "lucide-react";
 
 const statusVariant: Record<string, "success" | "warning" | "destructive" | "secondary"> = {
   PAGO: "success",
@@ -66,30 +68,54 @@ export default async function FinanceiroPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-3xl font-bold">Financeiro</h1>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h1 className="text-3xl font-bold">Financeiro</h1>
+        <div className="flex gap-2">
+          <Button asChild variant="outline">
+            <Link href="/financeiro/despesas/novo">
+              <Plus className="h-4 w-4" /> Nova despesa
+            </Link>
+          </Button>
+          <Button asChild>
+            <Link href="/financeiro/receitas/novo">
+              <Plus className="h-4 w-4" /> Nova receita
+            </Link>
+          </Button>
+        </div>
+      </div>
 
       <div className="grid gap-4 md:grid-cols-3">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-slate-500">Receita do mês</CardTitle>
+            <CardTitle className="text-sm font-medium text-slate-500">
+              Receita do mês
+            </CardTitle>
             <TrendingUp className="h-4 w-4 text-green-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-700">{formatBRL(receita)}</div>
+            <div className="text-2xl font-bold text-green-700">
+              {formatBRL(receita)}
+            </div>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-slate-500">Despesas do mês</CardTitle>
+            <CardTitle className="text-sm font-medium text-slate-500">
+              Despesas do mês
+            </CardTitle>
             <TrendingDown className="h-4 w-4 text-red-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-red-700">{formatBRL(despesa)}</div>
+            <div className="text-2xl font-bold text-red-700">
+              {formatBRL(despesa)}
+            </div>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-slate-500">Lucro do mês</CardTitle>
+            <CardTitle className="text-sm font-medium text-slate-500">
+              Lucro do mês
+            </CardTitle>
             <TrendingUp className="h-4 w-4 text-primary" />
           </CardHeader>
           <CardContent>
@@ -103,7 +129,8 @@ export default async function FinanceiroPage() {
           <CardContent className="flex items-center gap-3 py-4">
             <AlertCircle className="h-5 w-5 text-amber-600" />
             <p className="text-sm">
-              <strong>{atrasadas}</strong> cobrança(s) em atraso. Verifique a lista de receitas.
+              <strong>{atrasadas}</strong> cobrança(s) em atraso. Verifique a
+              lista de receitas.
             </p>
           </CardContent>
         </Card>
@@ -116,16 +143,28 @@ export default async function FinanceiroPage() {
           </CardHeader>
           <CardContent>
             {receitas.length === 0 ? (
-              <p className="text-sm text-slate-500">Nenhuma receita registrada.</p>
+              <p className="text-sm text-slate-500">
+                Nenhuma receita registrada.{" "}
+                <Link
+                  href="/financeiro/receitas/novo"
+                  className="text-primary hover:underline"
+                >
+                  Criar a primeira
+                </Link>
+                .
+              </p>
             ) : (
-              <div className="space-y-2">
+              <div className="space-y-1">
                 {receitas.map((r) => (
-                  <div
+                  <Link
                     key={r.id}
-                    className="flex items-center justify-between border-b pb-2 last:border-0"
+                    href={`/financeiro/receitas/${r.id}`}
+                    className="flex items-center justify-between rounded-md border-b px-2 py-2 transition-colors last:border-0 hover:bg-slate-50"
                   >
                     <div>
-                      <p className="text-sm font-medium">{r.contrato.empresaLocataria}</p>
+                      <p className="text-sm font-medium">
+                        {r.contrato.empresaLocataria}
+                      </p>
                       <p className="text-xs text-slate-500">
                         {r.contrato.numero} · venc {formatDate(r.vencimento)}
                       </p>
@@ -138,7 +177,7 @@ export default async function FinanceiroPage() {
                         {r.status}
                       </Badge>
                     </div>
-                  </div>
+                  </Link>
                 ))}
               </div>
             )}
@@ -151,13 +190,23 @@ export default async function FinanceiroPage() {
           </CardHeader>
           <CardContent>
             {despesas.length === 0 ? (
-              <p className="text-sm text-slate-500">Nenhuma despesa registrada.</p>
+              <p className="text-sm text-slate-500">
+                Nenhuma despesa registrada.{" "}
+                <Link
+                  href="/financeiro/despesas/novo"
+                  className="text-primary hover:underline"
+                >
+                  Criar a primeira
+                </Link>
+                .
+              </p>
             ) : (
-              <div className="space-y-2">
+              <div className="space-y-1">
                 {despesas.map((d) => (
-                  <div
+                  <Link
                     key={d.id}
-                    className="flex items-center justify-between border-b pb-2 last:border-0"
+                    href={`/financeiro/despesas/${d.id}`}
+                    className="flex items-center justify-between rounded-md border-b px-2 py-2 transition-colors last:border-0 hover:bg-slate-50"
                   >
                     <div>
                       <p className="text-sm font-medium">{d.descricao}</p>
@@ -173,7 +222,7 @@ export default async function FinanceiroPage() {
                         {d.pago ? "PAGO" : "ABERTO"}
                       </Badge>
                     </div>
-                  </div>
+                  </Link>
                 ))}
               </div>
             )}
