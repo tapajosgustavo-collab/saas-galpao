@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { formatBRL, formatDate, formatPercent } from "@/lib/utils";
 import { Building2, FileText, TrendingUp, AlertTriangle } from "lucide-react";
+import { AutomationPanel } from "./automation-panel";
 
 export default async function DashboardPage() {
   const ctx = await requireAuth();
@@ -180,6 +181,8 @@ export default async function DashboardPage() {
           </CardContent>
         </Card>
       </div>
+
+      {(ctx.role === "ADMIN" || ctx.role === "GESTOR") && <AutomationPanel />}
     </div>
   );
 }
