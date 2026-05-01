@@ -5,7 +5,14 @@ import { authConfig } from "@/lib/auth.config";
 // Middleware roda no Edge Runtime — usa apenas authConfig (sem Prisma/bcrypt).
 const { auth } = NextAuth(authConfig);
 
-const PUBLIC_PATHS = ["/", "/login", "/register", "/api/auth"];
+const PUBLIC_PATHS = [
+  "/",
+  "/login",
+  "/register",
+  "/api/auth",
+  "/aceitar-convite",
+  "/api/invite",
+];
 
 export default auth((req) => {
   const { pathname } = req.nextUrl;

@@ -41,20 +41,26 @@ model Tenant {
 }
 
 model User {
-  id           String   @id @default(cuid())
-  tenantId     String
-  email        String   @unique
-  name         String
-  passwordHash String
-  role         Role     @default(GESTOR)
-  active       Boolean  @default(true)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id            String    @id @default(cuid())
+  tenantId      String
+  email         String    @unique
+  name          String
+  passwordHash  String
+  role          Role      @default(GESTOR)
+  active        Boolean   @default(true)
+  // Convites: token gerado quando o admin convida; o usuario aceita
+  // definindo senha. Apos aceitar, esses campos voltam a NULL.
+  inviteToken   String?   @unique
+  inviteExpires DateTime?
+  invitedBy     String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 
   tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@index([tenantId])
   @@index([email])
+  @@index([inviteToken])
 }
 
 // Auth.js sessions (caso use JWT puro, podemos remover; mantido p/ flexibilidade)

@@ -9,6 +9,7 @@ import {
   Wallet,
   Sparkles,
   LogOut,
+  Users,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -18,6 +19,7 @@ const items = [
   { href: "/contratos", label: "Contratos", icon: FileText },
   { href: "/financeiro", label: "Financeiro", icon: Wallet },
   { href: "/insights", label: "Insights IA", icon: Sparkles },
+  { href: "/equipe", label: "Equipe", icon: Users },
 ];
 
 export function Sidebar() {
