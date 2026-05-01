@@ -65,8 +65,11 @@ export function ReceitaEditForm({ receita, contratos, canDelete }: Props) {
   }
 
   async function onPagar() {
+    const total = receita.valor.toFixed(2);
     const valor = prompt(
-      "Valor pago (R$):",
+      `Valor pago (R$). Total devido: R$ ${total}.\n` +
+        `Se digitar menos, sera registrado como PARCIAL (continua em aberto).\n` +
+        `Se digitar igual ou mais, sera marcado como PAGO.`,
       receita.valorPago || String(receita.valor),
     );
     if (!valor) return;
@@ -179,6 +182,7 @@ export function ReceitaEditForm({ receita, contratos, canDelete }: Props) {
               >
                 <option value="PENDENTE">Pendente</option>
                 <option value="PAGO">Pago</option>
+                <option value="PARCIAL">Parcial</option>
                 <option value="ATRASADO">Atrasado</option>
                 <option value="CANCELADO">Cancelado</option>
               </select>
@@ -248,7 +252,7 @@ export function ReceitaEditForm({ receita, contratos, canDelete }: Props) {
                   onClick={onPagar}
                 >
                   <CheckCircle2 className="h-4 w-4" />
-                  {paying ? "Registrando..." : "Marcar como pago"}
+                  {paying ? "Registrando..." : "Registrar pagamento"}
                 </Button>
               )}
             </div>

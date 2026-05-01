@@ -136,6 +136,7 @@ export function ReceitaNovoForm({ contratos }: { contratos: ContratoOption[] }) 
               >
                 <option value="PENDENTE">Pendente</option>
                 <option value="PAGO">Pago</option>
+                <option value="PARCIAL">Parcial</option>
                 <option value="ATRASADO">Atrasado</option>
                 <option value="CANCELADO">Cancelado</option>
               </select>

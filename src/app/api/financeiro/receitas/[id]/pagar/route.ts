@@ -6,8 +6,11 @@ import { apiError } from "@/lib/api";
 import { Role, StatusPagamento } from "@prisma/client";
 
 /**
- * Marca uma receita como PAGA.
- * Acao dedicada (em vez de PATCH genérico) pra clareza no front e auditoria.
+ * Registra pagamento de uma receita.
+ * Status e inferido automaticamente comparando valorPago com valor da receita:
+ *  - valorPago >= valor → PAGO
+ *  - 0 < valorPago < valor → PARCIAL
+ * Endpoint dedicado em vez de PATCH genérico para auditoria mais clara.
  */
 export async function POST(
   req: Request,
@@ -19,19 +22,31 @@ export async function POST(
     const body = await req.json();
     const data = receitaPagarSchema.parse(body);
 
-    const result = await prisma.receita.updateMany({
+    // Busca o valor da receita pra decidir se foi pagamento integral ou parcial
+    const receita = await prisma.receita.findFirst({
       where: { id, tenantId: ctx.tenantId },
+      select: { valor: true },
+    });
+    if (!receita) {
+      return NextResponse.json({ error: "Não encontrada" }, { status: 404 });
+    }
+
+    const valorTotal = Number(receita.valor);
+    const status: StatusPagamento =
+      data.valorPago >= valorTotal
+        ? StatusPagamento.PAGO
+        : StatusPagamento.PARCIAL;
+
+    await prisma.receita.update({
+      where: { id },
       data: {
         valorPago: data.valorPago,
         dataPagamento: data.dataPagamento,
-        status: StatusPagamento.PAGO,
+        status,
       },
     });
-    if (result.count === 0) {
-      return NextResponse.json({ error: "Não encontrada" }, { status: 404 });
-    }
     const updated = await prisma.receita.findUnique({ where: { id } });
-    return NextResponse.json(updated);
+    return NextResponse.json({ ...updated, _statusInferido: status });
   } catch (e) {
     return apiError(e);
   }

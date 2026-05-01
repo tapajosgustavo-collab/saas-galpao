@@ -7,8 +7,9 @@ import { Button } from "@/components/ui/button";
 import { formatBRL, formatDate } from "@/lib/utils";
 import { TrendingUp, TrendingDown, AlertCircle, Plus } from "lucide-react";
 
-const statusVariant: Record<string, "success" | "warning" | "destructive" | "secondary"> = {
+const statusVariant: Record<string, "success" | "warning" | "destructive" | "secondary" | "outline"> = {
   PAGO: "success",
+  PARCIAL: "outline",
   PENDENTE: "warning",
   ATRASADO: "destructive",
   CANCELADO: "secondary",

@@ -159,6 +159,7 @@ model Contrato {
 enum StatusPagamento {
   PENDENTE
   PAGO
+  PARCIAL
   ATRASADO
   CANCELADO
 }
