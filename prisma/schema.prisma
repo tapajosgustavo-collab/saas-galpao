@@ -37,6 +37,7 @@ model Tenant {
   alertas      Alerta[]
   auditLogs    AuditLog[]
   documentos   DocumentoGalpao[]
+  manutencoes  Manutencao[]
 
   @@index([slug])
 }
@@ -108,9 +109,10 @@ model Galpao {
   createdAt        DateTime     @default(now())
   updatedAt        DateTime     @updatedAt
 
-  tenant     Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  contratos  Contrato[]
-  documentos DocumentoGalpao[]
+  tenant      Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  contratos   Contrato[]
+  documentos  DocumentoGalpao[]
+  manutencoes Manutencao[]
 
   @@index([tenantId, status])
   @@index([tenantId, tipo])
@@ -144,9 +146,10 @@ model Contrato {
   createdAt          DateTime       @default(now())
   updatedAt          DateTime       @updatedAt
 
-  tenant   Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  galpao   Galpao    @relation(fields: [galpaoId], references: [id], onDelete: Restrict)
-  receitas Receita[]
+  tenant      Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  galpao      Galpao       @relation(fields: [galpaoId], references: [id], onDelete: Restrict)
+  receitas    Receita[]
+  manutencoes Manutencao[]
 
   @@unique([tenantId, numero])
   @@index([tenantId, status])
@@ -317,6 +320,74 @@ model DocumentoGalpao {
   @@index([tenantId, galpaoId])
   @@index([tenantId, tipo])
   @@index([tenantId, status])
+}
+
+// =========================================================
+// MANUTENCOES (preventiva / corretiva / emergencial)
+// =========================================================
+
+enum TipoManutencao {
+  PREVENTIVA
+  CORRETIVA
+  EMERGENCIAL
+}
+
+enum CategoriaManutencao {
+  ELETRICA
+  HIDRAULICA
+  ESTRUTURAL
+  COBERTURA
+  PINTURA
+  PORTAS_PORTOES
+  PISO
+  CLIMATIZACAO
+  SEGURANCA
+  LIMPEZA
+  OUTROS
+}
+
+enum StatusManutencao {
+  AGENDADA
+  EM_ANDAMENTO
+  CONCLUIDA
+  CANCELADA
+}
+
+model Manutencao {
+  id               String                @id @default(cuid())
+  tenantId         String
+  galpaoId         String
+  contratoId       String?
+  tipo             TipoManutencao
+  categoria        CategoriaManutencao
+  descricao        String
+  prestador        String
+  prestadorContato String?
+  prestadorCnpj    String?
+  dataInicio       DateTime
+  dataFim          DateTime?
+  valor            Decimal               @db.Decimal(12, 2)
+  pagoPor          ResponsavelPagamento?
+  status           StatusManutencao      @default(AGENDADA)
+  // Fotos: text[] no Postgres. Cliente cola URLs por enquanto.
+  // Quando E4 (Supabase Storage) entrar, vira upload nativo sem
+  // mudar o shape destes campos.
+  fotosAntes       String[]              @default([])
+  fotosDepois      String[]              @default([])
+  notaFiscalUrl    String?
+  observacoes      String?
+  createdAt        DateTime              @default(now())
+  updatedAt        DateTime              @updatedAt
+
+  tenant   Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  galpao   Galpao    @relation(fields: [galpaoId], references: [id], onDelete: Cascade)
+  contrato Contrato? @relation(fields: [contratoId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId, galpaoId])
+  @@index([tenantId, contratoId])
+  @@index([tenantId, status])
+  @@index([tenantId, dataInicio])
+  @@index([tenantId, categoria])
 }
 
 model AuditLog {

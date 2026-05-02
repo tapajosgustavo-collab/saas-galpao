@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { formatBRL, formatDate } from "@/lib/utils";
-import { FileText, AlertTriangle } from "lucide-react";
+import { FileText, AlertTriangle, Wrench } from "lucide-react";
 import { GalpaoEditForm } from "./form";
 
 export default async function GalpaoDetailPage({
@@ -65,18 +65,26 @@ export default async function GalpaoDetailPage({
             {galpao.endereco} — {galpao.cidade}/{galpao.estado}
           </p>
         </div>
-        <Button asChild variant="outline">
-          <Link href={`/galpoes/${id}/documentos`}>
-            <FileText className="h-4 w-4" />
-            Documentos ({galpao.documentos.length})
-            {docsCriticos.length > 0 && (
-              <Badge variant="warning" className="ml-1">
-                {docsCriticos.length} alerta
-                {docsCriticos.length === 1 ? "" : "s"}
-              </Badge>
-            )}
-          </Link>
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button asChild variant="outline">
+            <Link href={`/galpoes/${id}/manutencoes`}>
+              <Wrench className="h-4 w-4" />
+              Manutenções
+            </Link>
+          </Button>
+          <Button asChild variant="outline">
+            <Link href={`/galpoes/${id}/documentos`}>
+              <FileText className="h-4 w-4" />
+              Documentos ({galpao.documentos.length})
+              {docsCriticos.length > 0 && (
+                <Badge variant="warning" className="ml-1">
+                  {docsCriticos.length} alerta
+                  {docsCriticos.length === 1 ? "" : "s"}
+                </Badge>
+              )}
+            </Link>
+          </Button>
+        </div>
       </div>
 
       {docsCriticos.length > 0 && (
