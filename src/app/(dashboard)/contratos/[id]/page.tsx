@@ -1,9 +1,12 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/tenant";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { formatBRL, formatDate } from "@/lib/utils";
+import { ClipboardCheck } from "lucide-react";
 import { ContratoEditForm } from "./form";
 
 const statusVariant: Record<string, "success" | "warning" | "destructive" | "secondary" | "outline"> = {
@@ -42,13 +45,26 @@ export default async function ContratoDetailPage({
     orderBy: { nome: "asc" },
   });
 
+  // Conta vistorias pra exibir status no botao
+  const vistoriasCount = await prisma.vistoria.count({
+    where: { tenantId: ctx.tenantId, contratoId: id },
+  });
+
   return (
     <div className="mx-auto max-w-3xl space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">Contrato {contrato.numero}</h1>
-        <p className="text-sm text-slate-500">
-          {contrato.empresaLocataria} · CNPJ {contrato.cnpjLocataria}
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold">Contrato {contrato.numero}</h1>
+          <p className="text-sm text-slate-500">
+            {contrato.empresaLocataria} · CNPJ {contrato.cnpjLocataria}
+          </p>
+        </div>
+        <Button asChild variant="outline">
+          <Link href={`/contratos/${id}/vistoria`}>
+            <ClipboardCheck className="h-4 w-4" />
+            Vistorias ({vistoriasCount}/2)
+          </Link>
+        </Button>
       </div>
 
       <ContratoEditForm

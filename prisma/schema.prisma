@@ -38,6 +38,7 @@ model Tenant {
   auditLogs    AuditLog[]
   documentos   DocumentoGalpao[]
   manutencoes  Manutencao[]
+  vistorias    Vistoria[]
 
   @@index([slug])
 }
@@ -150,6 +151,7 @@ model Contrato {
   galpao      Galpao       @relation(fields: [galpaoId], references: [id], onDelete: Restrict)
   receitas    Receita[]
   manutencoes Manutencao[]
+  vistorias   Vistoria[]
 
   @@unique([tenantId, numero])
   @@index([tenantId, status])
@@ -388,6 +390,84 @@ model Manutencao {
   @@index([tenantId, status])
   @@index([tenantId, dataInicio])
   @@index([tenantId, categoria])
+}
+
+// =========================================================
+// VISTORIAS (Laudo Inicial e Final do contrato)
+// =========================================================
+
+enum TipoVistoria {
+  INICIAL
+  FINAL
+}
+
+enum StatusVistoria {
+  RASCUNHO
+  FINALIZADA
+}
+
+enum AreaVistoria {
+  ESTRUTURA
+  COBERTURA
+  PISO
+  PAREDES
+  PORTAS_PORTOES
+  ELETRICA
+  HIDRAULICA
+  ILUMINACAO
+  CLIMATIZACAO
+  EXTERNO_PATIO
+  SEGURANCA
+  OUTROS
+}
+
+enum CondicaoItem {
+  BOM
+  REGULAR
+  RUIM
+  CRITICO
+  NAO_APLICA
+}
+
+model Vistoria {
+  id                   String         @id @default(cuid())
+  tenantId             String
+  contratoId           String
+  tipo                 TipoVistoria
+  dataVistoria         DateTime
+  responsavelInterno   String?
+  responsavelLocataria String?
+  cpfLocataria         String?
+  observacoesGerais    String?
+  fotosGerais          String[]       @default([])
+  status               StatusVistoria @default(RASCUNHO)
+  documentoUrl         String?
+  createdAt            DateTime       @default(now())
+  updatedAt            DateTime       @updatedAt
+
+  tenant   Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  contrato Contrato       @relation(fields: [contratoId], references: [id], onDelete: Cascade)
+  itens    ItemVistoria[]
+
+  @@unique([contratoId, tipo])
+  @@index([tenantId])
+  @@index([tenantId, contratoId])
+  @@index([tenantId, status])
+}
+
+model ItemVistoria {
+  id         String       @id @default(cuid())
+  vistoriaId String
+  area       AreaVistoria
+  descricao  String?
+  condicao   CondicaoItem
+  observacao String?
+  fotos      String[]     @default([])
+  ordem      Int          @default(0)
+
+  vistoria Vistoria @relation(fields: [vistoriaId], references: [id], onDelete: Cascade)
+
+  @@index([vistoriaId])
 }
 
 model AuditLog {
