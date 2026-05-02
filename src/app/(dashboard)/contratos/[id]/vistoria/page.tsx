@@ -69,12 +69,13 @@ export default async function VistoriaPage({
     condFin: string;
     piorou: boolean;
   }> = [];
+  const rank = (c: string) => COND_RANK[c] ?? -1;
   if (inicial && finalV) {
     for (const itemFin of finalV.itens) {
       const itemIni = inicial.itens.find((i) => i.area === itemFin.area);
       if (!itemIni) continue;
       if (itemIni.condicao !== itemFin.condicao) {
-        const piorou = COND_RANK[itemFin.condicao] > COND_RANK[itemIni.condicao];
+        const piorou = rank(itemFin.condicao) > rank(itemIni.condicao);
         divergencias.push({
           area: AREA_LABEL[itemFin.area] ?? itemFin.area,
           condIni: itemIni.condicao,
