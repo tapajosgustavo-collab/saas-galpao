@@ -4,6 +4,7 @@ import {
   StatusContrato,
   SeveridadeAlerta,
   TipoAlerta,
+  StatusDocumento,
 } from "@prisma/client";
 
 export class CronUnauthorizedError extends Error {
@@ -108,6 +109,116 @@ export async function gerarAlertasVencimento(tenantId?: string) {
     count++;
   }
   return count;
+}
+
+// =========================================================
+// GERAR ALERTAS DE DOCUMENTOS VENCENDO (AVCB, IPTU, licencas)
+// =========================================================
+export async function gerarAlertasDocumentos(tenantId?: string) {
+  const hoje = new Date();
+  hoje.setHours(0, 0, 0, 0);
+
+  // Pega documentos cujo vencimento esta dentro da janela `alertarDiasAntes`
+  // ou ja passou. Filtra fora os marcados como NAO_APLICA ou EM_RENOVACAO.
+  const documentos = await prisma.documentoGalpao.findMany({
+    where: {
+      status: { notIn: [StatusDocumento.NAO_APLICA, StatusDocumento.EM_RENOVACAO] },
+      ...(tenantId ? { tenantId } : {}),
+    },
+    select: {
+      id: true,
+      tenantId: true,
+      tipo: true,
+      nome: true,
+      dataValidade: true,
+      alertarDiasAntes: true,
+      status: true,
+      responsavelPagamento: true,
+      galpao: { select: { nome: true } },
+    },
+  });
+
+  let alertasCriados = 0;
+  let statusAtualizados = 0;
+
+  for (const d of documentos) {
+    const ms = d.dataValidade.getTime() - hoje.getTime();
+    const dias = Math.ceil(ms / (1000 * 60 * 60 * 24));
+
+    // Atualiza status se mudou
+    let novoStatus: StatusDocumento | null = null;
+    if (dias < 0 && d.status !== StatusDocumento.VENCIDO) {
+      novoStatus = StatusDocumento.VENCIDO;
+    } else if (
+      dias >= 0 &&
+      dias <= d.alertarDiasAntes &&
+      d.status === StatusDocumento.VIGENTE
+    ) {
+      novoStatus = StatusDocumento.PROXIMO_VENCIMENTO;
+    }
+    if (novoStatus) {
+      await prisma.documentoGalpao.update({
+        where: { id: d.id },
+        data: { status: novoStatus },
+      });
+      statusAtualizados++;
+    }
+
+    // Gera alerta se esta dentro da janela ou vencido
+    const dentroJanela = dias >= 0 && dias <= d.alertarDiasAntes;
+    const vencido = dias < 0;
+    if (!dentroJanela && !vencido) continue;
+
+    const isIPTU = d.tipo === "IPTU";
+    const tipoAlerta = isIPTU
+      ? TipoAlerta.IPTU_PENDENTE
+      : TipoAlerta.DOCUMENTO_VENCENDO;
+
+    const existing = await prisma.alerta.findFirst({
+      where: {
+        tenantId: d.tenantId,
+        tipo: tipoAlerta,
+        refType: "documento",
+        refId: d.id,
+        lido: false,
+      },
+    });
+    if (existing) continue;
+
+    const sev: SeveridadeAlerta = vencido
+      ? SeveridadeAlerta.CRITICAL
+      : dias < 15
+        ? SeveridadeAlerta.CRITICAL
+        : dias < 30
+          ? SeveridadeAlerta.WARNING
+          : SeveridadeAlerta.INFO;
+
+    const tipoLabel = d.tipo.replace("_", " ");
+    const titulo = vencido
+      ? `${tipoLabel} VENCIDO ha ${Math.abs(dias)} dia${Math.abs(dias) === 1 ? "" : "s"}`
+      : `${tipoLabel} vence em ${dias} dia${dias === 1 ? "" : "s"}`;
+
+    let mensagem = `${d.nome} (${d.galpao.nome}) — validade ${d.dataValidade.toISOString().slice(0, 10)}.`;
+    if (isIPTU && d.responsavelPagamento === "LOCATARIA") {
+      mensagem +=
+        " Pagamento por conta da locataria. Cobre a prova de pagamento ou voce pode ter certidao negativa bloqueada.";
+    }
+
+    await prisma.alerta.create({
+      data: {
+        tenantId: d.tenantId,
+        tipo: tipoAlerta,
+        severidade: sev,
+        titulo,
+        mensagem,
+        refType: "documento",
+        refId: d.id,
+      },
+    });
+    alertasCriados++;
+  }
+
+  return { alertasCriados, statusAtualizados };
 }
 
 // =========================================================

@@ -13,6 +13,8 @@ interface ResultadoCron {
   totalContratos?: number;
   receitasMarcadasAtrasadas?: number;
   alertasContratosVencendoCriados?: number;
+  alertasDocumentosCriados?: number;
+  documentosStatusAtualizado?: number;
   error?: string;
 }
 
@@ -103,6 +105,19 @@ export function AutomationPanel() {
                   <strong>{resultado.alertasContratosVencendoCriados}</strong>
                 </li>
               )}
+              {resultado.alertasDocumentosCriados !== undefined && (
+                <li>
+                  Alertas criados (documentos vencendo):{" "}
+                  <strong>{resultado.alertasDocumentosCriados}</strong>
+                </li>
+              )}
+              {resultado.documentosStatusAtualizado !== undefined &&
+                resultado.documentosStatusAtualizado > 0 && (
+                  <li>
+                    Documentos com status atualizado:{" "}
+                    <strong>{resultado.documentosStatusAtualizado}</strong>
+                  </li>
+                )}
             </ul>
           </div>
         )}

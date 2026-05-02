@@ -4,6 +4,7 @@ import {
   CronUnauthorizedError,
   marcarAtrasadas,
   gerarAlertasVencimento,
+  gerarAlertasDocumentos,
 } from "@/lib/cron";
 
 /**
@@ -11,15 +12,18 @@ import {
  * Tarefas:
  * 1. Marcar receitas pendentes com vencimento passado como ATRASADAS
  * 2. Gerar alertas de contratos vencendo nos proximos 60 dias
+ * 3. Gerar alertas de documentos (AVCB, IPTU, licencas) proximos do
+ *    vencimento ou vencidos; atualiza status do documento.
  */
 export async function GET(req: Request) {
   try {
     assertCronAuth(req);
     const startedAt = new Date();
 
-    const [atrasadas, alertas] = await Promise.all([
+    const [atrasadas, alertasContratos, docs] = await Promise.all([
       marcarAtrasadas(),
       gerarAlertasVencimento(),
+      gerarAlertasDocumentos(),
     ]);
 
     return NextResponse.json({
@@ -27,7 +31,9 @@ export async function GET(req: Request) {
       startedAt: startedAt.toISOString(),
       durationMs: Date.now() - startedAt.getTime(),
       receitasMarcadasAtrasadas: atrasadas,
-      alertasContratosVencendoCriados: alertas,
+      alertasContratosVencendoCriados: alertasContratos,
+      alertasDocumentosCriados: docs.alertasCriados,
+      documentosStatusAtualizado: docs.statusAtualizados,
     });
   } catch (e) {
     if (e instanceof CronUnauthorizedError) {

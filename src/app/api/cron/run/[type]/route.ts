@@ -5,6 +5,7 @@ import { Role } from "@prisma/client";
 import {
   marcarAtrasadas,
   gerarAlertasVencimento,
+  gerarAlertasDocumentos,
   gerarReceitasMes,
 } from "@/lib/cron";
 
@@ -25,15 +26,18 @@ export async function POST(
 
     switch (type) {
       case "diario": {
-        const [atrasadas, alertas] = await Promise.all([
+        const [atrasadas, alertasContratos, docs] = await Promise.all([
           marcarAtrasadas(ctx.tenantId),
           gerarAlertasVencimento(ctx.tenantId),
+          gerarAlertasDocumentos(ctx.tenantId),
         ]);
         return NextResponse.json({
           ok: true,
           tenantId: ctx.tenantId,
           receitasMarcadasAtrasadas: atrasadas,
-          alertasContratosVencendoCriados: alertas,
+          alertasContratosVencendoCriados: alertasContratos,
+          alertasDocumentosCriados: docs.alertasCriados,
+          documentosStatusAtualizado: docs.statusAtualizados,
         });
       }
       case "mensal": {

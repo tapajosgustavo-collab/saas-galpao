@@ -36,6 +36,7 @@ model Tenant {
   despesas     Despesa[]
   alertas      Alerta[]
   auditLogs    AuditLog[]
+  documentos   DocumentoGalpao[]
 
   @@index([slug])
 }
@@ -107,8 +108,9 @@ model Galpao {
   createdAt        DateTime     @default(now())
   updatedAt        DateTime     @updatedAt
 
-  tenant    Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  contratos Contrato[]
+  tenant     Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  contratos  Contrato[]
+  documentos DocumentoGalpao[]
 
   @@index([tenantId, status])
   @@index([tenantId, tipo])
@@ -226,6 +228,8 @@ enum TipoAlerta {
   PAGAMENTO_ATRASADO
   GALPAO_OCIOSO
   REAJUSTE_PENDENTE
+  DOCUMENTO_VENCENDO
+  IPTU_PENDENTE
   INSIGHT_AI
 }
 
@@ -251,6 +255,68 @@ model Alerta {
 
   @@index([tenantId, lido])
   @@index([tenantId, tipo])
+}
+
+// =========================================================
+// DOCUMENTOS COM VIGENCIA POR GALPAO
+// =========================================================
+// AVCB (bombeiros, ~24m), Licenca Ambiental, Alvara, IPTU,
+// laudos tecnicos, analises (potabilidade etc) — qualquer doc
+// que precisa renovar e cuja perda de validade gera risco.
+
+enum TipoDocumentoGalpao {
+  AVCB
+  LICENCA_AMBIENTAL
+  ALVARA_FUNCIONAMENTO
+  IPTU
+  LAUDO_TECNICO
+  ANALISE_POTABILIDADE
+  PGRS
+  OUTROS
+}
+
+enum StatusDocumento {
+  VIGENTE
+  PROXIMO_VENCIMENTO
+  VENCIDO
+  EM_RENOVACAO
+  NAO_APLICA
+}
+
+enum ResponsavelPagamento {
+  LOCADOR
+  LOCATARIA
+  COMPARTILHADO
+}
+
+model DocumentoGalpao {
+  id                       String                @id @default(cuid())
+  tenantId                 String
+  galpaoId                 String
+  tipo                     TipoDocumentoGalpao
+  nome                     String                // descricao livre: "AVCB 2024-2026"
+  numero                   String?               // protocolo / numero do doc
+  emissor                  String?               // orgao emissor
+  dataEmissao              DateTime?
+  dataValidade             DateTime
+  frequenciaRenovacaoMeses Int?                  // 24 (AVCB), 3 (trimestral)...
+  alertarDiasAntes         Int                   @default(60)
+  status                   StatusDocumento       @default(VIGENTE)
+  // Para IPTU principalmente — quem paga
+  responsavelPagamento     ResponsavelPagamento?
+  // Anexos (URL no Supabase Storage quando E4 entrar)
+  documentoUrl             String?
+  observacoes              String?
+  createdAt                DateTime              @default(now())
+  updatedAt                DateTime              @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  galpao Galpao @relation(fields: [galpaoId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, dataValidade])
+  @@index([tenantId, galpaoId])
+  @@index([tenantId, tipo])
+  @@index([tenantId, status])
 }
 
 model AuditLog {

@@ -6,8 +6,9 @@ import { Badge } from "@/components/ui/badge";
 import { formatBRL, formatDate } from "@/lib/utils";
 import { ContratoEditForm } from "./form";
 
-const statusVariant: Record<string, "success" | "warning" | "destructive" | "secondary"> = {
+const statusVariant: Record<string, "success" | "warning" | "destructive" | "secondary" | "outline"> = {
   PAGO: "success",
+  PARCIAL: "outline",
   PENDENTE: "warning",
   ATRASADO: "destructive",
   CANCELADO: "secondary",
