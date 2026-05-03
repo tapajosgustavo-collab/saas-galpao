@@ -10,6 +10,7 @@ import {
   Sparkles,
   LogOut,
   Users,
+  Bell,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -18,11 +19,12 @@ const items = [
   { href: "/galpoes", label: "Galpões", icon: Building2 },
   { href: "/contratos", label: "Contratos", icon: FileText },
   { href: "/financeiro", label: "Financeiro", icon: Wallet },
+  { href: "/alertas", label: "Alertas", icon: Bell },
   { href: "/insights", label: "Insights IA", icon: Sparkles },
   { href: "/equipe", label: "Equipe", icon: Users },
 ];
 
-export function Sidebar() {
+export function Sidebar({ alertasNaoLidos = 0 }: { alertasNaoLidos?: number }) {
   const pathname = usePathname();
   return (
     <aside className="flex h-screen w-60 flex-col border-r bg-white">
@@ -46,7 +48,19 @@ export function Sidebar() {
               )}
             >
               <Icon className="h-4 w-4" />
-              {it.label}
+              <span className="flex-1">{it.label}</span>
+              {it.href === "/alertas" && alertasNaoLidos > 0 && (
+                <span
+                  className={cn(
+                    "rounded-full px-1.5 py-0.5 text-[10px] font-semibold",
+                    active
+                      ? "bg-white/20 text-white"
+                      : "bg-red-100 text-red-700",
+                  )}
+                >
+                  {alertasNaoLidos > 99 ? "99+" : alertasNaoLidos}
+                </span>
+              )}
             </Link>
           );
         })}
