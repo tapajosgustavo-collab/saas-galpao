@@ -2,12 +2,12 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Trash2, ImageIcon } from "lucide-react";
+import { PhotoUpload, SingleFileUpload } from "@/components/photo-upload";
 
 interface ContratoOption {
   id: string;
@@ -68,6 +68,15 @@ export function ManutencaoForm({
   const [success, setSuccess] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [fotosAntes, setFotosAntes] = useState<string[]>(
+    manutencao?.fotosAntes ?? [],
+  );
+  const [fotosDepois, setFotosDepois] = useState<string[]>(
+    manutencao?.fotosDepois ?? [],
+  );
+  const [notaFiscalUrl, setNotaFiscalUrl] = useState<string>(
+    manutencao?.notaFiscalUrl ?? "",
+  );
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -83,14 +92,16 @@ export function ManutencaoForm({
       "prestadorCnpj",
       "dataFim",
       "pagoPor",
-      "notaFiscalUrl",
       "observacoes",
     ].forEach((k) => {
       if (payload[k] === "" || payload[k] === null) delete payload[k];
     });
 
-    // Os campos fotosAntes / fotosDepois vem como string com URLs
-    // separadas por linha — Zod schema ja transforma em array.
+    // Sobrescreve com os valores controlados dos uploads
+    payload.fotosAntes = fotosAntes;
+    payload.fotosDepois = fotosDepois;
+    if (notaFiscalUrl) payload.notaFiscalUrl = notaFiscalUrl;
+    else delete payload.notaFiscalUrl;
 
     const url =
       mode === "create"
@@ -136,9 +147,6 @@ export function ManutencaoForm({
     router.push(`/galpoes/${galpaoId}/manutencoes`);
     router.refresh();
   }
-
-  const fotosAntesText = (manutencao?.fotosAntes ?? []).join("\n");
-  const fotosDepoisText = (manutencao?.fotosDepois ?? []).join("\n");
 
   return (
     <Card>
@@ -318,97 +326,41 @@ export function ManutencaoForm({
             </div>
           )}
 
-          <div className="rounded-md border border-blue-200 bg-blue-50/40 p-3 space-y-3">
+          <div className="rounded-md border border-blue-200 bg-blue-50/40 p-3 space-y-4">
             <div className="flex items-center gap-2 text-sm font-medium text-blue-900">
               <ImageIcon className="h-4 w-4" />
               Fotos comprobatorias
             </div>
             <p className="text-xs text-blue-800">
-              Cole URLs (uma por linha). Funciona com Drive, Imgur, ou
-              qualquer hospedagem publica. <strong>Upload nativo virá em
-              breve</strong> — quando entrar, as URLs continuam funcionando.
+              Tire fotos no celular ou faça upload do PC. Maximo 10MB por
+              arquivo, 10 arquivos por etapa.
             </p>
 
-            <div className="grid gap-3 md:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="fotosAntes" className="text-xs">
-                  URLs das fotos ANTES (uma por linha)
-                </Label>
-                <textarea
-                  id="fotosAntes"
-                  name="fotosAntes"
-                  rows={3}
-                  defaultValue={fotosAntesText}
-                  placeholder="https://...&#10;https://..."
-                  className="flex w-full rounded-md border border-input bg-white px-3 py-2 text-xs"
-                />
-                {manutencao?.fotosAntes && manutencao.fotosAntes.length > 0 && (
-                  <div className="grid grid-cols-3 gap-2 pt-1">
-                    {manutencao.fotosAntes.map((url) => (
-                      <a
-                        key={url}
-                        href={url}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="block aspect-square overflow-hidden rounded border bg-slate-100"
-                      >
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
-                          src={url}
-                          alt="antes"
-                          className="h-full w-full object-cover"
-                        />
-                      </a>
-                    ))}
-                  </div>
-                )}
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="fotosDepois" className="text-xs">
-                  URLs das fotos DEPOIS (uma por linha)
-                </Label>
-                <textarea
-                  id="fotosDepois"
-                  name="fotosDepois"
-                  rows={3}
-                  defaultValue={fotosDepoisText}
-                  placeholder="https://...&#10;https://..."
-                  className="flex w-full rounded-md border border-input bg-white px-3 py-2 text-xs"
-                />
-                {manutencao?.fotosDepois && manutencao.fotosDepois.length > 0 && (
-                  <div className="grid grid-cols-3 gap-2 pt-1">
-                    {manutencao.fotosDepois.map((url) => (
-                      <a
-                        key={url}
-                        href={url}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="block aspect-square overflow-hidden rounded border bg-slate-100"
-                      >
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
-                          src={url}
-                          alt="depois"
-                          className="h-full w-full object-cover"
-                        />
-                      </a>
-                    ))}
-                  </div>
-                )}
-              </div>
+            <div className="grid gap-4 md:grid-cols-2">
+              <PhotoUpload
+                folder="manutencoes"
+                urls={fotosAntes}
+                onChange={setFotosAntes}
+                label="Fotos ANTES"
+                maxFiles={10}
+              />
+              <PhotoUpload
+                folder="manutencoes"
+                urls={fotosDepois}
+                onChange={setFotosDepois}
+                label="Fotos DEPOIS"
+                maxFiles={10}
+              />
             </div>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="notaFiscalUrl">URL da NF / orcamento (opcional)</Label>
-            <Input
-              id="notaFiscalUrl"
-              name="notaFiscalUrl"
-              type="url"
-              defaultValue={manutencao?.notaFiscalUrl ?? ""}
-              placeholder="https://..."
-            />
-          </div>
+          <SingleFileUpload
+            folder="manutencoes"
+            url={notaFiscalUrl}
+            onChange={setNotaFiscalUrl}
+            label="Nota Fiscal / orcamento (PDF, opcional)"
+            accept="application/pdf,image/*"
+          />
 
           <div className="space-y-2">
             <Label htmlFor="observacoes">Observacoes</Label>

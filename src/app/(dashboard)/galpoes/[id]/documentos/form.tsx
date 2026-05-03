@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Trash2 } from "lucide-react";
+import { SingleFileUpload } from "@/components/photo-upload";
 
 const TIPOS = [
   { value: "AVCB", label: "AVCB — Bombeiros", freqDefault: 24 },
@@ -52,6 +53,9 @@ export function DocumentoForm({
   const [loading, setLoading] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [tipo, setTipo] = useState(documento?.tipo ?? "AVCB");
+  const [documentoUrl, setDocumentoUrl] = useState<string>(
+    documento?.documentoUrl ?? "",
+  );
 
   const tipoMeta = TIPOS.find((t) => t.value === tipo);
   const isIPTU = tipo === "IPTU";
@@ -71,11 +75,13 @@ export function DocumentoForm({
       "dataEmissao",
       "frequenciaRenovacaoMeses",
       "responsavelPagamento",
-      "documentoUrl",
       "observacoes",
     ].forEach((k) => {
       if (payload[k] === "" || payload[k] === null) delete payload[k];
     });
+
+    if (documentoUrl) payload.documentoUrl = documentoUrl;
+    else delete payload.documentoUrl;
 
     const url =
       mode === "create"
@@ -283,19 +289,13 @@ export function DocumentoForm({
             </div>
           )}
 
-          <div className="space-y-2">
-            <Label htmlFor="documentoUrl">URL do documento (opcional)</Label>
-            <Input
-              id="documentoUrl"
-              name="documentoUrl"
-              type="url"
-              placeholder="https://... (PDF no Drive, Supabase, etc)"
-              defaultValue={documento?.documentoUrl ?? ""}
-            />
-            <p className="text-xs text-slate-500">
-              Por enquanto cole um link. Upload nativo virá em breve.
-            </p>
-          </div>
+          <SingleFileUpload
+            folder="documentos"
+            url={documentoUrl}
+            onChange={setDocumentoUrl}
+            label="Anexar documento (PDF/imagem, opcional)"
+            accept="application/pdf,image/*"
+          />
 
           <div className="space-y-2">
             <Label htmlFor="observacoes">Observacoes</Label>

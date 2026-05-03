@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Trash2, Plus, Lock, Unlock } from "lucide-react";
+import { PhotoUpload, SingleFileUpload } from "@/components/photo-upload";
 
 const AREAS = [
   { value: "ESTRUTURA", label: "Estrutura" },
@@ -83,6 +84,12 @@ export function VistoriaForm({
   const [itens, setItens] = useState<ItemState[]>(
     vistoria?.itens && vistoria.itens.length > 0 ? vistoria.itens : TEMPLATE_ITENS,
   );
+  const [fotosGerais, setFotosGerais] = useState<string[]>(
+    vistoria?.fotosGerais ?? [],
+  );
+  const [documentoUrl, setDocumentoUrl] = useState<string>(
+    vistoria?.documentoUrl ?? "",
+  );
 
   function setItemField<K extends keyof ItemState>(
     index: number,
@@ -115,10 +122,6 @@ export function VistoriaForm({
     setLoading(true);
 
     const fd = new FormData(e.currentTarget);
-    const fotosGerais = String(fd.get("fotosGerais") ?? "")
-      .split(/[\n,]+/)
-      .map((s) => s.trim())
-      .filter(Boolean);
 
     const payload = {
       tipo,
@@ -128,7 +131,7 @@ export function VistoriaForm({
       cpfLocataria: fd.get("cpfLocataria") || undefined,
       observacoesGerais: fd.get("observacoesGerais") || undefined,
       fotosGerais,
-      documentoUrl: fd.get("documentoUrl") || undefined,
+      documentoUrl: documentoUrl || undefined,
       status: finalize ? "FINALIZADA" : (fd.get("status") ?? "RASCUNHO"),
       itens: itens.map((it, idx) => ({
         ...it,
@@ -280,26 +283,21 @@ export function VistoriaForm({
               />
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="fotosGerais">URLs de fotos gerais (uma por linha)</Label>
-              <textarea
-                id="fotosGerais"
-                name="fotosGerais"
-                rows={2}
-                defaultValue={(vistoria?.fotosGerais ?? []).join("\n")}
-                className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-xs"
-              />
-            </div>
+            <PhotoUpload
+              folder="vistorias"
+              urls={fotosGerais}
+              onChange={setFotosGerais}
+              label="Fotos gerais do laudo"
+              maxFiles={15}
+            />
 
-            <div className="space-y-2">
-              <Label htmlFor="documentoUrl">URL do PDF assinado (opcional)</Label>
-              <Input
-                id="documentoUrl"
-                name="documentoUrl"
-                type="url"
-                defaultValue={vistoria?.documentoUrl ?? ""}
-              />
-            </div>
+            <SingleFileUpload
+              folder="vistorias"
+              url={documentoUrl}
+              onChange={setDocumentoUrl}
+              label="PDF do laudo assinado (opcional)"
+              accept="application/pdf"
+            />
 
             <input type="hidden" name="status" value={vistoria?.status ?? "RASCUNHO"} />
           </fieldset>
@@ -388,58 +386,25 @@ export function VistoriaForm({
                   )}
                 </div>
 
-                <div className="grid gap-3 md:grid-cols-2">
-                  <div className="space-y-1">
-                    <Label className="text-xs">Observação</Label>
-                    <Input
-                      value={item.observacao}
-                      onChange={(e) =>
-                        setItemField(idx, "observacao", e.target.value)
-                      }
-                      placeholder="Ex: 2 telhas trincadas no canto NE"
-                      className="h-9 text-xs"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <Label className="text-xs">URLs de fotos (uma por linha)</Label>
-                    <textarea
-                      value={item.fotos.join("\n")}
-                      onChange={(e) =>
-                        setItemField(
-                          idx,
-                          "fotos",
-                          e.target.value
-                            .split(/[\n,]+/)
-                            .map((s) => s.trim())
-                            .filter(Boolean),
-                        )
-                      }
-                      rows={2}
-                      className="flex w-full rounded-md border border-input bg-background px-2 py-1 text-xs"
-                    />
-                  </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">Observação</Label>
+                  <Input
+                    value={item.observacao}
+                    onChange={(e) =>
+                      setItemField(idx, "observacao", e.target.value)
+                    }
+                    placeholder="Ex: 2 telhas trincadas no canto NE"
+                    className="h-9 text-xs"
+                  />
                 </div>
 
-                {item.fotos.length > 0 && (
-                  <div className="grid grid-cols-4 gap-2">
-                    {item.fotos.map((url) => (
-                      <a
-                        key={url}
-                        href={url}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="block aspect-square overflow-hidden rounded border bg-slate-100"
-                      >
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
-                          src={url}
-                          alt={item.area}
-                          className="h-full w-full object-cover"
-                        />
-                      </a>
-                    ))}
-                  </div>
-                )}
+                <PhotoUpload
+                  folder="vistorias"
+                  urls={item.fotos}
+                  onChange={(novas) => setItemField(idx, "fotos", novas)}
+                  maxFiles={6}
+                  compact
+                />
               </div>
             ))}
           </fieldset>
