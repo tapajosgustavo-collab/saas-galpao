@@ -53,7 +53,7 @@ export default async function DashboardPage() {
       prisma.receita.findMany({
         where: {
           tenantId,
-          status: "PENDENTE",
+          status: { in: ["ATRASADO", "PENDENTE", "PARCIAL"] },
           vencimento: { lt: new Date() },
         },
         orderBy: { vencimento: "asc" },

@@ -58,7 +58,11 @@ export default async function FinanceiroPage() {
     prisma.receita.count({
       where: {
         tenantId: ctx.tenantId,
-        status: "PENDENTE",
+        // Conta atrasadas em qualquer estado com saldo aberto:
+        // - ATRASADO (cron ja converteu)
+        // - PENDENTE + venceu (cron ainda vai converter)
+        // - PARCIAL + venceu (pagamento parcial mas saldo restante)
+        status: { in: ["ATRASADO", "PENDENTE", "PARCIAL"] },
         vencimento: { lt: new Date() },
       },
     }),
