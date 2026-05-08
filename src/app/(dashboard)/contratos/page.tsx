@@ -4,6 +4,7 @@ import { requireAuth } from "@/lib/tenant";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { ExportButton } from "@/components/export-button";
 import { formatBRL, formatDate } from "@/lib/utils";
 import { Plus, AlertTriangle } from "lucide-react";
 
@@ -33,11 +34,14 @@ export default async function ContratosPage() {
           <h1 className="text-3xl font-bold">Contratos</h1>
           <p className="text-sm text-slate-500">{contratos.length} contrato(s)</p>
         </div>
-        <Button asChild>
-          <Link href="/contratos/novo">
-            <Plus className="h-4 w-4" /> Novo contrato
-          </Link>
-        </Button>
+        <div className="flex gap-2">
+          {contratos.length > 0 && <ExportButton type="contratos" />}
+          <Button asChild>
+            <Link href="/contratos/novo">
+              <Plus className="h-4 w-4" /> Novo contrato
+            </Link>
+          </Button>
+        </div>
       </div>
 
       {contratos.length === 0 ? (

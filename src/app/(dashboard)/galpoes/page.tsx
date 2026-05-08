@@ -4,6 +4,7 @@ import { requireAuth } from "@/lib/tenant";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { ExportButton } from "@/components/export-button";
 import { formatBRL } from "@/lib/utils";
 import { Plus, MapPin } from "lucide-react";
 
@@ -31,11 +32,14 @@ export default async function GalpoesPage() {
             {galpoes.length !== 1 && "s"}
           </p>
         </div>
-        <Button asChild>
-          <Link href="/galpoes/novo">
-            <Plus className="h-4 w-4" /> Novo galpão
-          </Link>
-        </Button>
+        <div className="flex gap-2">
+          {galpoes.length > 0 && <ExportButton type="galpoes" />}
+          <Button asChild>
+            <Link href="/galpoes/novo">
+              <Plus className="h-4 w-4" /> Novo galpão
+            </Link>
+          </Button>
+        </div>
       </div>
 
       {galpoes.length === 0 ? (

@@ -4,6 +4,7 @@ import { requireAuth } from "@/lib/tenant";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { ExportButton } from "@/components/export-button";
 import { formatBRL, formatDate } from "@/lib/utils";
 import { TrendingUp, TrendingDown, AlertCircle, Plus } from "lucide-react";
 
@@ -71,7 +72,13 @@ export default async function FinanceiroPage() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h1 className="text-3xl font-bold">Financeiro</h1>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
+          {receitas.length > 0 && (
+            <ExportButton type="receitas" label="Excel receitas" />
+          )}
+          {despesas.length > 0 && (
+            <ExportButton type="despesas" label="Excel despesas" />
+          )}
           <Button asChild variant="outline">
             <Link href="/financeiro/despesas/novo">
               <Plus className="h-4 w-4" /> Nova despesa

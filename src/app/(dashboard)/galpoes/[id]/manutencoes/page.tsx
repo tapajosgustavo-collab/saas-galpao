@@ -5,6 +5,7 @@ import { requireAuth } from "@/lib/tenant";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { ExportButton } from "@/components/export-button";
 import { formatBRL, formatDate } from "@/lib/utils";
 import { Plus, Wrench } from "lucide-react";
 
@@ -84,11 +85,16 @@ export default async function ManutencoesPage({
             {manutencoes.length === 1 ? "" : "s"}
           </p>
         </div>
-        <Button asChild>
-          <Link href={`/galpoes/${id}/manutencoes/novo`}>
-            <Plus className="h-4 w-4" /> Nova manutenção
-          </Link>
-        </Button>
+        <div className="flex gap-2">
+          {manutencoes.length > 0 && (
+            <ExportButton type="manutencoes" galpaoId={id} />
+          )}
+          <Button asChild>
+            <Link href={`/galpoes/${id}/manutencoes/novo`}>
+              <Plus className="h-4 w-4" /> Nova manutenção
+            </Link>
+          </Button>
+        </div>
       </div>
 
       {recentes.length > 0 && (
