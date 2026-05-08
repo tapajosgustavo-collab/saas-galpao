@@ -44,7 +44,9 @@ export default function RegisterPage() {
         <CardHeader className="text-center">
           <Building2 className="mx-auto mb-2 h-8 w-8 text-primary" />
           <CardTitle>Criar conta</CardTitle>
-          <CardDescription>Comece a gerenciar seus galpões em minutos</CardDescription>
+          <CardDescription>
+            <strong>14 dias grátis.</strong> Sem cartão de crédito.
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={onSubmit} className="space-y-4">

@@ -39,6 +39,7 @@ model Tenant {
   documentos   DocumentoGalpao[]
   manutencoes  Manutencao[]
   vistorias    Vistoria[]
+  subscription Subscription?
 
   @@index([slug])
 }
@@ -468,6 +469,42 @@ model ItemVistoria {
   vistoria Vistoria @relation(fields: [vistoriaId], references: [id], onDelete: Cascade)
 
   @@index([vistoriaId])
+}
+
+// =========================================================
+// SUBSCRIPTION (assinatura/plano por tenant)
+// =========================================================
+
+enum Plan {
+  STARTER
+  PRO
+  BUSINESS
+  ENTERPRISE
+}
+
+enum SubscriptionStatus {
+  TRIALING
+  ACTIVE
+  PAST_DUE
+  CANCELED
+}
+
+model Subscription {
+  id               String             @id @default(cuid())
+  tenantId         String             @unique
+  plan             Plan               @default(STARTER)
+  status           SubscriptionStatus @default(TRIALING)
+  trialEndsAt      DateTime
+  currentPeriodEnd DateTime
+  notes            String?
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([status])
+  @@index([trialEndsAt])
+  @@index([currentPeriodEnd])
 }
 
 model AuditLog {

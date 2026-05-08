@@ -9,6 +9,7 @@ const PUBLIC_PATHS = [
   "/",
   "/login",
   "/register",
+  "/planos",
   "/api/auth",
   "/aceitar-convite",
   "/api/invite",

@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { registroSchema } from "@/lib/validators/financeiro";
 import { apiError } from "@/lib/api";
 import { Role } from "@prisma/client";
+import { createTrialSubscription } from "@/lib/subscription";
 
 function slugify(s: string) {
   return s
@@ -55,6 +56,9 @@ export async function POST(req: Request) {
         },
       },
     });
+
+    // Cria a subscription de trial (14 dias gratis)
+    await createTrialSubscription(tenant.id);
 
     return NextResponse.json({ tenantId: tenant.id }, { status: 201 });
   } catch (e) {
