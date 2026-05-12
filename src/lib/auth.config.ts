@@ -28,6 +28,8 @@ type AppJWT = {
   id: string;
   tenantId: string;
   role: Role;
+  email?: string;
+  name?: string;
   [key: string]: unknown;
 };
 
@@ -48,6 +50,10 @@ export const authConfig = {
         t.id = user.id!;
         t.tenantId = user.tenantId;
         t.role = user.role;
+        // Auth.js v5 NAO copia email/name automaticamente quando ha callback
+        // custom. Explicitamos pra session.user.email funcionar.
+        if (user.email) t.email = user.email;
+        if (user.name) t.name = user.name;
       }
       return t;
     },
@@ -57,6 +63,8 @@ export const authConfig = {
         session.user.id = t.id;
         session.user.tenantId = t.tenantId;
         session.user.role = t.role;
+        if (typeof t.email === "string") session.user.email = t.email;
+        if (typeof t.name === "string") session.user.name = t.name;
       }
       return session;
     },
