@@ -1,7 +1,9 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { signOut } from "next-auth/react";
 import {
   Building2,
   LayoutDashboard,
@@ -13,6 +15,7 @@ import {
   Bell,
   CreditCard,
   Shield,
+  Loader2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -103,15 +106,27 @@ export function Sidebar({
           </Link>
         )}
       </nav>
-      <form action="/api/auth/signout" method="post" className="border-t p-3">
-        <button
-          type="submit"
-          className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm text-slate-600 hover:bg-slate-100"
-        >
-          <LogOut className="h-4 w-4" />
-          Sair
-        </button>
-      </form>
+      <div className="border-t p-3">
+        <SignOutButton />
+      </div>
     </aside>
+  );
+}
+
+function SignOutButton() {
+  const [loading, setLoading] = useState(false);
+  return (
+    <button
+      type="button"
+      disabled={loading}
+      onClick={async () => {
+        setLoading(true);
+        await signOut({ callbackUrl: "/login" });
+      }}
+      className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm text-slate-600 hover:bg-slate-100 disabled:opacity-50"
+    >
+      {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <LogOut className="h-4 w-4" />}
+      {loading ? "Saindo..." : "Sair"}
+    </button>
   );
 }
