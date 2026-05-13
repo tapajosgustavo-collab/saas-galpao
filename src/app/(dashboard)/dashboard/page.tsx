@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/tenant";
+import { isSuperAdmin } from "@/lib/subscription";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { formatBRL, formatDate, formatPercent } from "@/lib/utils";
@@ -182,7 +183,9 @@ export default async function DashboardPage() {
         </Card>
       </div>
 
-      {(ctx.role === "ADMIN" || ctx.role === "GESTOR") && <AutomationPanel />}
+      {(ctx.role === "ADMIN" || ctx.role === "GESTOR") && (
+        <AutomationPanel showEmailTest={isSuperAdmin(ctx.email)} />
+      )}
     </div>
   );
 }

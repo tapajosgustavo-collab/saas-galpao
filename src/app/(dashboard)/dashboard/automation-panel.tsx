@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Zap, Calendar, RefreshCw } from "lucide-react";
+import { Zap, Calendar, RefreshCw, Mail } from "lucide-react";
 
 interface ResultadoCron {
   ok?: boolean;
@@ -18,16 +18,20 @@ interface ResultadoCron {
   error?: string;
 }
 
-export function AutomationPanel() {
+export function AutomationPanel({ showEmailTest = false }: { showEmailTest?: boolean }) {
   const router = useRouter();
-  const [running, setRunning] = useState<"diario" | "mensal" | null>(null);
+  const [running, setRunning] = useState<"diario" | "mensal" | "email" | null>(
+    null,
+  );
   const [resultado, setResultado] = useState<ResultadoCron | null>(null);
   const [erro, setErro] = useState<string | null>(null);
+  const [emailMsg, setEmailMsg] = useState<string | null>(null);
 
   async function rodar(type: "diario" | "mensal") {
     setRunning(type);
     setErro(null);
     setResultado(null);
+    setEmailMsg(null);
 
     const res = await fetch(`/api/cron/run/${type}`, { method: "POST" });
     setRunning(null);
@@ -40,6 +44,30 @@ export function AutomationPanel() {
     const data = (await res.json()) as ResultadoCron;
     setResultado(data);
     router.refresh();
+  }
+
+  async function testEmail() {
+    setRunning("email");
+    setErro(null);
+    setEmailMsg(null);
+
+    const res = await fetch("/api/test-email", { method: "POST" });
+    setRunning(null);
+    const data = await res.json().catch(() => ({}));
+
+    if (!res.ok) {
+      setErro(data.error ?? "Erro ao enviar email");
+      return;
+    }
+    if (data.sent) {
+      setEmailMsg(`Email enviado (id ${data.id ?? "?"}). Cheque sua caixa de entrada.`);
+    } else {
+      setErro(
+        data.reason === "no-api-key"
+          ? "RESEND_API_KEY nao configurada na Vercel."
+          : `Falhou: ${data.reason ?? "erro desconhecido"}`,
+      );
+    }
   }
 
   return (
@@ -77,6 +105,25 @@ export function AutomationPanel() {
               : "Atualizar atrasadas + alertas"}
           </Button>
         </div>
+
+        {showEmailTest && (
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={running !== null}
+            onClick={testEmail}
+            className="w-full"
+          >
+            <Mail className="h-4 w-4" />
+            {running === "email" ? "Enviando..." : "Enviar email de teste (super admin)"}
+          </Button>
+        )}
+
+        {emailMsg && (
+          <p className="rounded-md bg-green-50 p-2 text-xs text-green-800">
+            {emailMsg}
+          </p>
+        )}
 
         {erro && (
           <p className="rounded-md bg-red-50 p-2 text-xs text-red-700">{erro}</p>

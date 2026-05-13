@@ -6,6 +6,46 @@ import {
   TipoAlerta,
   StatusDocumento,
 } from "@prisma/client";
+import {
+  sendEmail,
+  renderAlertEmail,
+  getTenantNotifyEmails,
+} from "@/lib/email";
+
+/**
+ * Envia notificacao por email pros admins/gestores do tenant.
+ * Falha silenciosa — nao quebra o cron se Resend nao estiver configurado.
+ */
+async function notifyByEmail(args: {
+  tenantId: string;
+  titulo: string;
+  mensagem: string;
+  severidade: SeveridadeAlerta;
+  tipo: TipoAlerta;
+  refType?: string | null;
+  refId?: string | null;
+}) {
+  // So envia email pra severidades CRITICAL e WARNING (evita spam de INFO)
+  if (args.severidade === SeveridadeAlerta.INFO) return;
+  try {
+    const emails = await getTenantNotifyEmails(args.tenantId);
+    if (emails.length === 0) return;
+    await sendEmail({
+      to: emails,
+      subject: `[${args.severidade}] ${args.titulo}`,
+      html: renderAlertEmail({
+        titulo: args.titulo,
+        mensagem: args.mensagem,
+        severidade: args.severidade,
+        tipo: args.tipo,
+        refType: args.refType,
+        refId: args.refId,
+      }),
+    });
+  } catch (e) {
+    console.error("[cron] falha no email:", e);
+  }
+}
 
 export class CronUnauthorizedError extends Error {
   constructor(message = "Cron unauthorized") {
@@ -95,16 +135,27 @@ export async function gerarAlertasVencimento(tenantId?: string) {
           ? SeveridadeAlerta.WARNING
           : SeveridadeAlerta.INFO;
 
+    const titulo = `Contrato ${c.numero} vence em ${dias} dia${dias === 1 ? "" : "s"}`;
+    const mensagem = `Contrato com ${c.empresaLocataria} termina em ${c.dataFim.toISOString().slice(0, 10)}. Considere iniciar a renovacao.`;
     await prisma.alerta.create({
       data: {
         tenantId: c.tenantId,
         tipo: TipoAlerta.CONTRATO_VENCENDO,
         severidade: sev,
-        titulo: `Contrato ${c.numero} vence em ${dias} dia${dias === 1 ? "" : "s"}`,
-        mensagem: `Contrato com ${c.empresaLocataria} termina em ${c.dataFim.toISOString().slice(0, 10)}. Considere iniciar a renovacao.`,
+        titulo,
+        mensagem,
         refType: "contrato",
         refId: c.id,
       },
+    });
+    await notifyByEmail({
+      tenantId: c.tenantId,
+      titulo,
+      mensagem,
+      severidade: sev,
+      tipo: TipoAlerta.CONTRATO_VENCENDO,
+      refType: "contrato",
+      refId: c.id,
     });
     count++;
   }
@@ -214,6 +265,15 @@ export async function gerarAlertasDocumentos(tenantId?: string) {
         refType: "documento",
         refId: d.id,
       },
+    });
+    await notifyByEmail({
+      tenantId: d.tenantId,
+      titulo,
+      mensagem,
+      severidade: sev,
+      tipo: tipoAlerta,
+      refType: "documento",
+      refId: d.id,
     });
     alertasCriados++;
   }
