@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Trash2, Plus, Lock, Unlock } from "lucide-react";
 import { PhotoUpload, SingleFileUpload } from "@/components/photo-upload";
+import { AIAssist } from "@/components/ai-assist";
 
 const AREAS = [
   { value: "ESTRUTURA", label: "Estrutura" },
@@ -90,6 +91,42 @@ export function VistoriaForm({
   const [documentoUrl, setDocumentoUrl] = useState<string>(
     vistoria?.documentoUrl ?? "",
   );
+  const [observacoesGeraisIA, setObservacoesGeraisIA] = useState<string>("");
+  const [formKey, setFormKey] = useState(0);
+
+  function applyAIFields(filled: Record<string, unknown>) {
+    const obs = filled.observacoesGerais;
+    if (typeof obs === "string") setObservacoesGeraisIA(obs);
+
+    const aiItens = filled.itens;
+    if (Array.isArray(aiItens)) {
+      // Merge: pra cada item da AI, atualiza o item existente na mesma area
+      // (ou cria novo se area nao existe no template).
+      setItens((current) => {
+        const next = [...current];
+        for (const ai of aiItens as Array<{ area: string; condicao: string; observacao?: string }>) {
+          const idx = next.findIndex((it) => it.area === ai.area);
+          if (idx >= 0) {
+            next[idx] = {
+              ...next[idx]!,
+              condicao: ai.condicao || next[idx]!.condicao,
+              observacao: ai.observacao || next[idx]!.observacao,
+            };
+          } else {
+            next.push({
+              area: ai.area,
+              descricao: "",
+              condicao: ai.condicao || "BOM",
+              observacao: ai.observacao || "",
+              fotos: [],
+            });
+          }
+        }
+        return next;
+      });
+    }
+    setFormKey((k) => k + 1);
+  }
 
   function setItemField<K extends keyof ItemState>(
     index: number,
@@ -206,7 +243,17 @@ export function VistoriaForm({
   }
 
   return (
-    <form onSubmit={(e) => onSubmit(e, false)} className="space-y-6">
+    <form key={formKey} onSubmit={(e) => onSubmit(e, false)} className="space-y-6">
+      {/* IA Assist - so quando esta criando ou rascunho */}
+      {!isFinalizada && mode === "create" && (
+        <AIAssist
+          schemaName="vistoria"
+          placeholder='Ex: "Galpao em bom estado geral. Telhado com 2 telhas trincadas no canto NE (RUIM). Piso bom, paredes regulares com manchas. Eletrica e hidraulica BOM. Portao automatico funcionando."'
+          helperText="Descreva o estado do galpao e a IA preenche as condicoes de cada area do checklist."
+          onFill={applyAIFields}
+          accent="purple"
+        />
+      )}
       {/* Header card com dados gerais */}
       <Card>
         <CardHeader>
@@ -278,7 +325,7 @@ export function VistoriaForm({
                 name="observacoesGerais"
                 rows={3}
                 maxLength={2000}
-                defaultValue={vistoria?.observacoesGerais ?? ""}
+                defaultValue={observacoesGeraisIA || vistoria?.observacoesGerais || ""}
                 className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
               />
             </div>

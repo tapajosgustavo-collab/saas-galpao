@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Trash2, ImageIcon } from "lucide-react";
 import { PhotoUpload, SingleFileUpload } from "@/components/photo-upload";
+import { AIAssist } from "@/components/ai-assist";
 
 interface ContratoOption {
   id: string;
@@ -77,6 +78,19 @@ export function ManutencaoForm({
   const [notaFiscalUrl, setNotaFiscalUrl] = useState<string>(
     manutencao?.notaFiscalUrl ?? "",
   );
+  const [aiFields, setAiFields] = useState<Partial<ManutencaoState>>({});
+  const [formKey, setFormKey] = useState(0);
+
+  function applyAIFields(filled: Record<string, unknown>) {
+    setAiFields(filled as Partial<ManutencaoState>);
+    setFormKey((k) => k + 1);
+  }
+
+  // Valor efetivo: AI > manutencao (edit) > vazio
+  const v = (k: keyof ManutencaoState) =>
+    (aiFields[k] as string | number | undefined) ??
+    (manutencao?.[k] as string | number | undefined) ??
+    "";
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -160,7 +174,18 @@ export function ManutencaoForm({
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <form onSubmit={onSubmit} className="space-y-4">
+        {mode === "create" && (
+          <div className="mb-4">
+            <AIAssist
+              schemaName="manutencao"
+              placeholder='Ex: "Troca de telhas no canto NE realizada por Telhados SP Ltda CNPJ 12.345.678/0001-90 em 10/05/2026, R$ 8.500, manutencao corretiva, paga pelo locador"'
+              helperText="Descreva o servico e a IA preenche os campos abaixo."
+              onFill={applyAIFields}
+              accent="purple"
+            />
+          </div>
+        )}
+        <form key={formKey} onSubmit={onSubmit} className="space-y-4">
           <div className="grid grid-cols-3 gap-4">
             <div className="space-y-2">
               <Label htmlFor="tipo">Tipo</Label>
@@ -168,7 +193,7 @@ export function ManutencaoForm({
                 id="tipo"
                 name="tipo"
                 required
-                defaultValue={manutencao?.tipo ?? "CORRETIVA"}
+                defaultValue={String(v("tipo")) || "CORRETIVA"}
                 className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
               >
                 <option value="PREVENTIVA">Preventiva</option>
@@ -182,7 +207,7 @@ export function ManutencaoForm({
                 id="categoria"
                 name="categoria"
                 required
-                defaultValue={manutencao?.categoria ?? "ELETRICA"}
+                defaultValue={String(v("categoria")) || "ELETRICA"}
                 className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
               >
                 {CATEGORIAS.map((c) => (
@@ -197,7 +222,7 @@ export function ManutencaoForm({
               <select
                 id="status"
                 name="status"
-                defaultValue={manutencao?.status ?? "AGENDADA"}
+                defaultValue={String(v("status")) || "AGENDADA"}
                 className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
               >
                 <option value="AGENDADA">Agendada</option>
@@ -216,7 +241,7 @@ export function ManutencaoForm({
               required
               maxLength={2000}
               rows={3}
-              defaultValue={manutencao?.descricao ?? ""}
+              defaultValue={String(v("descricao"))}
               placeholder="Ex: troca do motor do portao automatico, instalacao de 4 disjuntores novos"
               className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
             />
@@ -230,7 +255,7 @@ export function ManutencaoForm({
                 name="prestador"
                 required
                 maxLength={200}
-                defaultValue={manutencao?.prestador ?? ""}
+                defaultValue={String(v("prestador"))}
               />
             </div>
             <div className="space-y-2">
@@ -239,7 +264,7 @@ export function ManutencaoForm({
                 id="prestadorContato"
                 name="prestadorContato"
                 maxLength={100}
-                defaultValue={manutencao?.prestadorContato ?? ""}
+                defaultValue={String(v("prestadorContato"))}
               />
             </div>
           </div>
@@ -251,7 +276,7 @@ export function ManutencaoForm({
                 id="prestadorCnpj"
                 name="prestadorCnpj"
                 maxLength={30}
-                defaultValue={manutencao?.prestadorCnpj ?? ""}
+                defaultValue={String(v("prestadorCnpj"))}
               />
             </div>
             <div className="space-y-2">
@@ -261,7 +286,7 @@ export function ManutencaoForm({
                 name="dataInicio"
                 type="date"
                 required
-                defaultValue={manutencao?.dataInicio ?? ""}
+                defaultValue={String(v("dataInicio"))}
               />
             </div>
             <div className="space-y-2">
@@ -270,7 +295,7 @@ export function ManutencaoForm({
                 id="dataFim"
                 name="dataFim"
                 type="date"
-                defaultValue={manutencao?.dataFim ?? ""}
+                defaultValue={String(v("dataFim"))}
               />
             </div>
           </div>
@@ -285,7 +310,7 @@ export function ManutencaoForm({
                 step="0.01"
                 min="0"
                 required
-                defaultValue={manutencao?.valor ?? ""}
+                defaultValue={String(v("valor"))}
               />
             </div>
             <div className="space-y-2">
@@ -293,7 +318,7 @@ export function ManutencaoForm({
               <select
                 id="pagoPor"
                 name="pagoPor"
-                defaultValue={manutencao?.pagoPor ?? ""}
+                defaultValue={String(v("pagoPor"))}
                 className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
               >
                 <option value="">— Selecione —</option>

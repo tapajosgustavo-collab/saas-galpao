@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Trash2 } from "lucide-react";
 import { SingleFileUpload } from "@/components/photo-upload";
+import { AIAssist } from "@/components/ai-assist";
 
 const TIPOS = [
   { value: "AVCB", label: "AVCB — Bombeiros", freqDefault: 24 },
@@ -56,6 +57,20 @@ export function DocumentoForm({
   const [documentoUrl, setDocumentoUrl] = useState<string>(
     documento?.documentoUrl ?? "",
   );
+  const [aiFields, setAiFields] = useState<Partial<DocumentoState>>({});
+  const [formKey, setFormKey] = useState(0);
+
+  function applyAIFields(filled: Record<string, unknown>) {
+    const f = filled as Partial<DocumentoState>;
+    setAiFields(f);
+    if (f.tipo) setTipo(f.tipo);
+    setFormKey((k) => k + 1);
+  }
+
+  const v = (k: keyof DocumentoState) =>
+    (aiFields[k] as string | undefined) ??
+    (documento?.[k] as string | undefined) ??
+    "";
 
   const tipoMeta = TIPOS.find((t) => t.value === tipo);
   const isIPTU = tipo === "IPTU";
@@ -140,7 +155,18 @@ export function DocumentoForm({
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <form onSubmit={onSubmit} className="space-y-4">
+        {mode === "create" && (
+          <div className="mb-4">
+            <AIAssist
+              schemaName="documento"
+              placeholder='Ex: "AVCB Cajamar protocolo 2024-12345 emitido pelo CBPMSP em 15/03/2024, validade ate 15/03/2026, renovar a cada 24 meses, avisar 60 dias antes"'
+              helperText="Descreva o documento e a IA preenche os campos."
+              onFill={applyAIFields}
+              accent="purple"
+            />
+          </div>
+        )}
+        <form key={formKey} onSubmit={onSubmit} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="tipo">Tipo</Label>
@@ -164,7 +190,7 @@ export function DocumentoForm({
               <select
                 id="status"
                 name="status"
-                defaultValue={documento?.status ?? "VIGENTE"}
+                defaultValue={String(v("status")) || "VIGENTE"}
                 className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
               >
                 <option value="VIGENTE">Vigente</option>
@@ -184,7 +210,7 @@ export function DocumentoForm({
               required
               maxLength={200}
               placeholder="Ex: AVCB 2024-2026"
-              defaultValue={documento?.nome ?? ""}
+              defaultValue={String(v("nome"))}
             />
           </div>
 
@@ -195,7 +221,7 @@ export function DocumentoForm({
                 id="numero"
                 name="numero"
                 maxLength={100}
-                defaultValue={documento?.numero ?? ""}
+                defaultValue={String(v("numero"))}
               />
             </div>
             <div className="space-y-2">
@@ -205,7 +231,7 @@ export function DocumentoForm({
                 name="emissor"
                 maxLength={200}
                 placeholder="Ex: CBPMSP"
-                defaultValue={documento?.emissor ?? ""}
+                defaultValue={String(v("emissor"))}
               />
             </div>
           </div>
@@ -217,7 +243,7 @@ export function DocumentoForm({
                 id="dataEmissao"
                 name="dataEmissao"
                 type="date"
-                defaultValue={documento?.dataEmissao ?? ""}
+                defaultValue={String(v("dataEmissao"))}
               />
             </div>
             <div className="space-y-2">
@@ -227,7 +253,7 @@ export function DocumentoForm({
                 name="dataValidade"
                 type="date"
                 required
-                defaultValue={documento?.dataValidade ?? ""}
+                defaultValue={String(v("dataValidade"))}
               />
             </div>
           </div>
@@ -248,7 +274,7 @@ export function DocumentoForm({
                     ? `Sugerido: ${tipoMeta.freqDefault}`
                     : "Ex: 12"
                 }
-                defaultValue={documento?.frequenciaRenovacaoMeses ?? ""}
+                defaultValue={String(v("frequenciaRenovacaoMeses"))}
               />
             </div>
             <div className="space-y-2">
@@ -259,7 +285,7 @@ export function DocumentoForm({
                 type="number"
                 min="1"
                 max="365"
-                defaultValue={documento?.alertarDiasAntes ?? 60}
+                defaultValue={String(v("alertarDiasAntes")) || "60"}
                 required
               />
             </div>
@@ -278,7 +304,7 @@ export function DocumentoForm({
               <select
                 id="responsavelPagamento"
                 name="responsavelPagamento"
-                defaultValue={documento?.responsavelPagamento ?? ""}
+                defaultValue={String(v("responsavelPagamento"))}
                 className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
               >
                 <option value="">— Selecione —</option>
