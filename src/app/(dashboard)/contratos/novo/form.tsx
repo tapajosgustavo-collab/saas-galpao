@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AIAssist } from "@/components/ai-assist";
+import { PdfExtract } from "@/components/pdf-extract";
 
 interface GalpaoOption {
   id: string;
@@ -75,10 +76,18 @@ export function ContratoForm({ galpoes }: { galpoes: GalpaoOption[] }) {
 
   return (
     <div className="space-y-6">
+      <PdfExtract
+        schemaName="contrato"
+        onExtracted={applyAIFields}
+        helperText="Faça upload do PDF do contrato. A IA extrai locatária, CNPJ, vigência, valor mensal e reajuste."
+        buttonLabel="Anexar PDF do contrato"
+        accent="blue"
+      />
+      <div className="-my-3 text-center text-xs text-slate-400">— OU —</div>
       <AIAssist
         schemaName="contrato"
         placeholder='Ex: "Contrato CT-2024-001 com Mercado Livre Brasil CNPJ 03.007.331/0001-41 de 01/01/2024 a 31/12/2026, R$ 142.500,00 mensais, reajuste anual 5% IPCA, vencimento dia 5"'
-        helperText="Descreva o contrato em texto livre e a IA preenche o formulário."
+        helperText="Ou descreva o contrato em texto livre."
         onFill={applyAIFields}
         accent="purple"
       />
