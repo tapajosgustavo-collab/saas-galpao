@@ -1,12 +1,13 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/tenant";
+import { checkGalpaoSlot, formatLimit, nextPlan } from "@/lib/plan-limits";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ExportButton } from "@/components/export-button";
 import { formatBRL } from "@/lib/utils";
-import { Plus, MapPin } from "lucide-react";
+import { Plus, MapPin, Lock } from "lucide-react";
 
 const statusColor: Record<string, "success" | "warning" | "secondary" | "destructive"> = {
   DISPONIVEL: "success",
@@ -17,10 +18,17 @@ const statusColor: Record<string, "success" | "warning" | "secondary" | "destruc
 
 export default async function GalpoesPage() {
   const ctx = await requireAuth();
-  const galpoes = await prisma.galpao.findMany({
-    where: { tenantId: ctx.tenantId },
-    orderBy: { createdAt: "desc" },
-  });
+  const [galpoes, slot] = await Promise.all([
+    prisma.galpao.findMany({
+      where: { tenantId: ctx.tenantId },
+      orderBy: { createdAt: "desc" },
+    }),
+    checkGalpaoSlot(ctx.tenantId),
+  ]);
+
+  const limitMax = formatLimit(slot.max);
+  const np = nextPlan(slot.plan);
+  const restantes = Number.isFinite(slot.max) ? slot.max - slot.current : null;
 
   return (
     <div className="space-y-6">
@@ -28,19 +36,54 @@ export default async function GalpoesPage() {
         <div>
           <h1 className="text-3xl font-bold">Galpões</h1>
           <p className="text-sm text-slate-500">
-            {galpoes.length} galpão{galpoes.length !== 1 && "ões"} cadastrado
-            {galpoes.length !== 1 && "s"}
+            {slot.current} de {limitMax} galpões — plano{" "}
+            <strong>{slot.plan}</strong>
+            {restantes !== null && restantes <= 2 && restantes > 0 && (
+              <span className="ml-2 rounded bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700">
+                restam {restantes}
+              </span>
+            )}
+            {!slot.allowed && (
+              <span className="ml-2 rounded bg-red-100 px-2 py-0.5 text-xs font-medium text-red-700">
+                limite atingido
+              </span>
+            )}
           </p>
         </div>
         <div className="flex gap-2">
           {galpoes.length > 0 && <ExportButton type="galpoes" />}
-          <Button asChild>
-            <Link href="/galpoes/novo">
-              <Plus className="h-4 w-4" /> Novo galpão
-            </Link>
-          </Button>
+          {slot.allowed ? (
+            <Button asChild>
+              <Link href="/galpoes/novo">
+                <Plus className="h-4 w-4" /> Novo galpão
+              </Link>
+            </Button>
+          ) : (
+            <Button asChild variant="outline" className="border-amber-300 text-amber-700">
+              <Link href="/configuracoes/plano">
+                <Lock className="h-4 w-4" />
+                Upgrade pra {np ?? "Enterprise"}
+              </Link>
+            </Button>
+          )}
         </div>
       </div>
+
+      {!slot.allowed && (
+        <Card className="border-amber-300 bg-amber-50">
+          <CardContent className="flex items-center justify-between py-3 text-sm">
+            <p className="text-amber-900">
+              <Lock className="mr-1 inline h-4 w-4" />
+              Você atingiu o limite de <strong>{slot.max} galpões</strong> do plano{" "}
+              {slot.plan}.{" "}
+              {np && <>Faça upgrade pra <strong>{np}</strong> pra continuar cadastrando.</>}
+            </p>
+            <Button asChild size="sm">
+              <Link href="/configuracoes/plano">Ver planos</Link>
+            </Button>
+          </CardContent>
+        </Card>
+      )}
 
       {galpoes.length === 0 ? (
         <Card>

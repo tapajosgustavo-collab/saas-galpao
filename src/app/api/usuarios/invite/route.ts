@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { requireRole } from "@/lib/tenant";
 import { apiError } from "@/lib/api";
 import { inviteCreateSchema } from "@/lib/validators/usuario";
+import { requireUserSlot } from "@/lib/plan-limits";
 import { Role } from "@prisma/client";
 
 const INVITE_TTL_DAYS = 7;
@@ -23,6 +24,7 @@ const INVITE_TTL_DAYS = 7;
 export async function POST(req: Request) {
   try {
     const ctx = await requireRole(Role.ADMIN);
+    await requireUserSlot(ctx.tenantId);
     const body = await req.json();
     const data = inviteCreateSchema.parse(body);
     const email = data.email.toLowerCase();

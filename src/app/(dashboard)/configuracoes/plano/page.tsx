@@ -4,10 +4,16 @@ import {
   getOrCreateSubscription,
   PLAN_INFO,
 } from "@/lib/subscription";
+import {
+  checkGalpaoSlot,
+  checkUserSlot,
+  PLAN_LIMITS,
+  formatLimit,
+} from "@/lib/plan-limits";
 import { prisma } from "@/lib/prisma";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { CreditCard, Check, AlertTriangle, Sparkles } from "lucide-react";
+import { CreditCard, Check, AlertTriangle, Sparkles, Building2, Users } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 
 const STATUS_LABEL: Record<string, string> = {
@@ -32,6 +38,11 @@ export default async function ConfigPlanoPage() {
     where: { id: ctx.tenantId },
     select: { name: true },
   });
+  const [galpaoUsage, userUsage] = await Promise.all([
+    checkGalpaoSlot(ctx.tenantId),
+    checkUserSlot(ctx.tenantId),
+  ]);
+  const currentPlanLimits = PLAN_LIMITS[sub.plan];
 
   const planInfo = PLAN_INFO[sub.plan];
 
@@ -100,6 +111,49 @@ export default async function ConfigPlanoPage() {
               <p className="text-slate-500">Próxima cobrança em</p>
               <p className="font-medium">{formatDate(sub.currentPeriodEnd)}</p>
             </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Uso atual vs limites do plano */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Uso do plano</CardTitle>
+          <CardDescription>
+            Quanto você está usando do que o plano {sub.plan} oferece.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <UsageBar
+            icon={<Building2 className="h-4 w-4 text-primary" />}
+            label="Galpões"
+            current={galpaoUsage.current}
+            max={galpaoUsage.max}
+          />
+          <UsageBar
+            icon={<Users className="h-4 w-4 text-primary" />}
+            label="Usuários ativos"
+            current={userUsage.current}
+            max={userUsage.max}
+          />
+          <div className="flex flex-wrap gap-2 border-t pt-3">
+            <FeatureFlag
+              active={currentPlanLimits.aiAgents}
+              label="Agentes IA"
+            />
+            <FeatureFlag
+              active={currentPlanLimits.aiAssist}
+              label="Assistente IA nos formulários"
+            />
+            <FeatureFlag
+              active={currentPlanLimits.excelExport}
+              label="Exportação Excel"
+            />
+            <FeatureFlag
+              active={currentPlanLimits.customDomain}
+              label="Domínio próprio"
+            />
+            <FeatureFlag active={currentPlanLimits.sso} label="SSO" />
           </div>
         </CardContent>
       </Card>
@@ -189,6 +243,58 @@ export default async function ConfigPlanoPage() {
           );
         })}
       </div>
+    </div>
+  );
+}
+
+function UsageBar({
+  icon,
+  label,
+  current,
+  max,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  current: number;
+  max: number;
+}) {
+  const unlimited = !Number.isFinite(max);
+  const pct = unlimited ? 0 : Math.min(100, Math.round((current / max) * 100));
+  const color =
+    pct >= 100 ? "bg-red-600" : pct >= 80 ? "bg-amber-500" : "bg-primary";
+  return (
+    <div>
+      <div className="mb-1 flex items-center justify-between text-sm">
+        <span className="flex items-center gap-2">
+          {icon}
+          <strong>{label}</strong>
+        </span>
+        <span className="text-slate-600">
+          {current}
+          {!unlimited && <> / {max}</>}
+          {unlimited && <> / ∞</>}
+        </span>
+      </div>
+      {!unlimited && (
+        <div className="h-2 w-full overflow-hidden rounded-full bg-slate-200">
+          <div className={`h-full ${color} transition-all`} style={{ width: `${pct}%` }} />
+        </div>
+      )}
+    </div>
+  );
+}
+
+function FeatureFlag({ active, label }: { active: boolean; label: string }) {
+  return (
+    <div
+      className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ${
+        active
+          ? "bg-green-100 text-green-800"
+          : "bg-slate-100 text-slate-500 line-through"
+      }`}
+    >
+      <Check className={`h-3 w-3 ${active ? "text-green-700" : "text-slate-400"}`} />
+      {label}
     </div>
   );
 }

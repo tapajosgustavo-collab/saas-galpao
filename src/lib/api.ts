@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
 import { ZodError } from "zod";
 import { ForbiddenError, UnauthorizedError } from "@/lib/tenant";
+import { PlanLimitError } from "@/lib/plan-limits";
 
 export function apiError(error: unknown): NextResponse {
   if (error instanceof UnauthorizedError) {
@@ -9,6 +10,13 @@ export function apiError(error: unknown): NextResponse {
   }
   if (error instanceof ForbiddenError) {
     return NextResponse.json({ error: error.message }, { status: 403 });
+  }
+  // 402 Payment Required — usado pra limites de plano ("upgrade pra continuar")
+  if (error instanceof PlanLimitError) {
+    return NextResponse.json(
+      { error: error.message, code: "plan_limit_reached" },
+      { status: 402 },
+    );
   }
   if (error instanceof ZodError) {
     return NextResponse.json(

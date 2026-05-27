@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { requireAuth, requireRole } from "@/lib/tenant";
 import { galpaoCreateSchema } from "@/lib/validators/galpao";
 import { apiError } from "@/lib/api";
+import { requireGalpaoSlot } from "@/lib/plan-limits";
 import { Role } from "@prisma/client";
 
 export async function GET() {
@@ -24,6 +25,7 @@ export async function GET() {
 export async function POST(req: Request) {
   try {
     const ctx = await requireRole(Role.ADMIN, Role.GESTOR);
+    await requireGalpaoSlot(ctx.tenantId);
     const body = await req.json();
     const data = galpaoCreateSchema.parse(body);
 

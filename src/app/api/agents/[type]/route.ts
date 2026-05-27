@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireAuth } from "@/lib/tenant";
 import { apiError } from "@/lib/api";
+import { requireAIAgents } from "@/lib/plan-limits";
 import { analisarFinanceiro } from "@/lib/agents/financeiro";
 import { gerarInsights } from "@/lib/agents/analitico";
 import { analisarOperacao } from "@/lib/agents/operacional";
@@ -11,6 +12,7 @@ export async function POST(
 ) {
   try {
     const ctx = await requireAuth();
+    await requireAIAgents(ctx.tenantId);
     const { type } = await params;
 
     let text: string;
