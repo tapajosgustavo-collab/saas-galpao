@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Trash2 } from "lucide-react";
 import { SingleFileUpload } from "@/components/photo-upload";
 import { AIAssist } from "@/components/ai-assist";
+import { PdfExtract } from "@/components/pdf-extract";
 
 const TIPOS = [
   { value: "AVCB", label: "AVCB — Bombeiros", freqDefault: 24 },
@@ -156,11 +157,19 @@ export function DocumentoForm({
       </CardHeader>
       <CardContent>
         {mode === "create" && (
-          <div className="mb-4">
+          <div className="mb-4 space-y-3">
+            <PdfExtract
+              schemaName="documento"
+              onExtracted={applyAIFields}
+              helperText="Faça upload do PDF do AVCB, IPTU, licença ou alvará. A IA extrai protocolo, emissor, datas e tipo automaticamente."
+              buttonLabel="Anexar PDF do documento"
+              accent="blue"
+            />
+            <div className="text-center text-xs text-slate-400">— OU —</div>
             <AIAssist
               schemaName="documento"
               placeholder='Ex: "AVCB Cajamar protocolo 2024-12345 emitido pelo CBPMSP em 15/03/2024, validade ate 15/03/2026, renovar a cada 24 meses, avisar 60 dias antes"'
-              helperText="Descreva o documento e a IA preenche os campos."
+              helperText="Descreva o documento em texto livre."
               onFill={applyAIFields}
               accent="purple"
             />
