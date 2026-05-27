@@ -23,6 +23,7 @@ export const PLAN_LIMITS: Record<Plan, PlanLimits> = {
     aiAssist: false,
     aiCallsPerMonth: 0,
     excelExport: true,
+    apiAccess: false,
     customDomain: false,
     sso: false,
   },
@@ -33,6 +34,7 @@ export const PLAN_LIMITS: Record<Plan, PlanLimits> = {
     aiAssist: true,
     aiCallsPerMonth: 100,
     excelExport: true,
+    apiAccess: false,
     customDomain: false,
     sso: false,
   },
@@ -43,6 +45,7 @@ export const PLAN_LIMITS: Record<Plan, PlanLimits> = {
     aiAssist: true,
     aiCallsPerMonth: UNLIMITED,
     excelExport: true,
+    apiAccess: true,
     customDomain: true,
     sso: false,
   },
@@ -53,6 +56,7 @@ export const PLAN_LIMITS: Record<Plan, PlanLimits> = {
     aiAssist: true,
     aiCallsPerMonth: UNLIMITED,
     excelExport: true,
+    apiAccess: true,
     customDomain: true,
     sso: true,
   },
@@ -148,6 +152,15 @@ export async function requireAIAgents(tenantId: string): Promise<void> {
   if (!limits.aiAgents) {
     throw new PlanLimitError(
       `Agentes IA disponíveis a partir do plano Pro. Plano atual: ${plan}. ${upgradeMsg(plan)}`,
+    );
+  }
+}
+
+export async function requireApiAccess(tenantId: string): Promise<void> {
+  const { plan, limits } = await getPlanLimits(tenantId);
+  if (!limits.apiAccess) {
+    throw new PlanLimitError(
+      `API pública (ERP integration) disponível a partir do plano Business. Plano atual: ${plan}. ${upgradeMsg(plan)}`,
     );
   }
 }

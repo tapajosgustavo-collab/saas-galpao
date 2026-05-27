@@ -16,6 +16,7 @@ import {
   CreditCard,
   Shield,
   Loader2,
+  KeyRound,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -89,6 +90,19 @@ export function Sidebar({
         >
           <CreditCard className="h-4 w-4" />
           <span className="flex-1">Plano</span>
+        </Link>
+
+        <Link
+          href="/configuracoes/api-keys"
+          className={cn(
+            "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+            pathname.startsWith("/configuracoes/api-keys")
+              ? "bg-primary text-primary-foreground"
+              : "text-slate-600 hover:bg-slate-100",
+          )}
+        >
+          <KeyRound className="h-4 w-4" />
+          <span className="flex-1">API Keys</span>
         </Link>
 
         {showAdminLink && (

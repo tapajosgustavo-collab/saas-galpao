@@ -39,6 +39,7 @@ model Tenant {
   documentos   DocumentoGalpao[]
   manutencoes  Manutencao[]
   vistorias    Vistoria[]
+  apiKeys      ApiKey[]
   subscription Subscription?
 
   @@index([slug])
@@ -505,6 +506,31 @@ model Subscription {
   @@index([status])
   @@index([trialEndsAt])
   @@index([currentPeriodEnd])
+}
+
+// =========================================================
+// API KEYS (integração ERP por tenant — Business+)
+// =========================================================
+
+model ApiKey {
+  id          String    @id @default(cuid())
+  tenantId    String
+  name        String    // ex: "TOTVS Integration", "Bling import"
+  // Guardamos SO o hash (sha256) — chave bruta apos criar nunca pode
+  // ser recuperada. Cliente ve uma vez no momento da criacao.
+  keyHash     String    @unique
+  keyPrefix   String    // 12 primeiros chars pra display (ex: "sk_live_a1b2")
+  lastUsedAt  DateTime?
+  expiresAt   DateTime?
+  revokedAt   DateTime?
+  createdById String? // userId que gerou
+  createdAt   DateTime  @default(now())
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([keyHash])
+  @@index([tenantId, revokedAt])
 }
 
 model AuditLog {
